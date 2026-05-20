@@ -11,13 +11,8 @@ from aiortc import (
 )
 from aiortc.contrib.media import MediaPlayer
 
-try:
-    from aiortc.sdp import candidate_from_sdp  # type: ignore
-except Exception:  # pragma: no cover
-    candidate_from_sdp = None  # type: ignore
-
 # 🔹 1. Initialize Firebase
-cred = credentials.Certificate("/home/pi/serviceAccountKey.json")
+cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -36,32 +31,13 @@ def _candidate_to_firestore(candidate: RTCIceCandidate):
         "sdpMLineIndex": candidate.sdpMLineIndex,
     }
 
+
 def _candidate_from_firestore(data):
-    candidate_sdp = data["candidate"]
-    sdp_mid = data.get("sdpMid")
-    sdp_mline_index = data.get("sdpMLineIndex")
-
-    # Newer aiortc versions accept the browser-style candidate string directly.
-    try:
-        return RTCIceCandidate(candidate=candidate_sdp, sdpMid=sdp_mid, sdpMLineIndex=sdp_mline_index)
-    except TypeError:
-        pass
-
-    # Older aiortc versions require parsing the candidate SDP into a structured object.
-    if candidate_from_sdp is None:
-        raise
-
-    normalized = candidate_sdp
-    if normalized.startswith("a="):
-        normalized = normalized[2:]
-    # candidate_from_sdp expects the string to start with "candidate:".
-    if not normalized.startswith("candidate:") and "candidate:" in normalized:
-        normalized = normalized[normalized.index("candidate:") :]
-
-    cand = candidate_from_sdp(normalized)
-    cand.sdpMid = sdp_mid
-    cand.sdpMLineIndex = sdp_mline_index
-    return cand
+    return RTCIceCandidate(
+        candidate=data["candidate"],
+        sdpMid=data.get("sdpMid"),
+        sdpMLineIndex=data.get("sdpMLineIndex"),
+    )
 
 
 def _create_peer_connection() -> RTCPeerConnection:
