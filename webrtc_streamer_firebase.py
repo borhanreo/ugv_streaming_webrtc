@@ -67,7 +67,7 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
         room_ref.collection(local_candidates_collection).add(_candidate_to_firestore(candidate))
 
 
-async def main(room_id: str, *, fps: int):
+async def main(room_id: str):
     # 🔹 2. Define Firestore document path (room)
     room_ref = db.collection("rooms").document(room_id)
 
@@ -83,14 +83,7 @@ async def main(room_id: str, *, fps: int):
     _install_peer_handlers(pc, room_ref=room_ref, local_candidates_collection=local_candidates)
 
     # 🔹 4. Grab webcam video
-    player = MediaPlayer(
-        "/dev/video0",
-        format="v4l2",
-        options={
-            "video_size": "640x480",
-            "framerate": str(fps),
-        },
-    )
+    player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "640x480"})
     pc.addTrack(player.video)
 
     if is_callee:
@@ -168,7 +161,6 @@ async def main(room_id: str, *, fps: int):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WebRTC webcam streamer using Firebase Firestore signaling")
     parser.add_argument("--room-id", default=DEFAULT_ROOM_ID, help="Firestore room id")
-    parser.add_argument("--fps", type=int, default=30, help="Camera frame rate (FPS)")
     args = parser.parse_args()
 
-    asyncio.run(main(args.room_id, fps=args.fps))
+    asyncio.run(main(args.room_id))
