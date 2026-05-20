@@ -12,7 +12,7 @@ from aiortc import (
 from aiortc.contrib.media import MediaPlayer
 
 # 🔹 1. Initialize Firebase
-cred = credentials.Certificate("serviceAccountKey.json")
+cred = credentials.Certificate("/home/pi/serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
