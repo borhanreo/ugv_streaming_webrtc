@@ -83,7 +83,8 @@ async def main(room_id: str):
     _install_peer_handlers(pc, room_ref=room_ref, local_candidates_collection=local_candidates)
 
     # 🔹 4. Grab webcam video
-    player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "640x480"})
+    fps = 30  # Set your desired frame rate
+    player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "640x480", "framerate": 10})
     pc.addTrack(player.video)
 
     if is_callee:
