@@ -129,6 +129,7 @@ python3 main.py --service-account ... --join <ROOM_ID> --width 1280 --height 720
 
 
 # New install 
+
 ## install
 ```sudo apt update && sudo apt upgrade -y```
 ```sudo apt install python3 python3-pip v4l-utils -y```
@@ -148,3 +149,6 @@ python3 main.py --service-account ... --join <ROOM_ID> --width 1280 --height 720
 
 ### Run python 
 ```python3 webrtc_streamer_firebase.py --room-id borhan12```
+
+### add firebase json
+```/home/pi/serviceAccountKey.json```
