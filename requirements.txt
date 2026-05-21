@@ -1,2 +1,3 @@
 aiortc
 firebase-admin
+paho-mqtt

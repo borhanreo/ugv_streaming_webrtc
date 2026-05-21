@@ -4,6 +4,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
+from lib.mqtt_client import MqttClient, MqttConfig
 from aiortc import (
     RTCConfiguration,
     RTCIceCandidate,
@@ -19,6 +20,14 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 DEFAULT_ROOM_ID = "borhan123"
+
+# MQTT (static configuration)
+# Set MQTT_SUBSCRIBE_TOPIC to a topic string to enable MQTT.
+MQTT_HOST = "emq.safeprotechnologiesportal.com"
+MQTT_PORT = 1883
+MQTT_USERNAME = "safeproMQTT"  # e.g. "my-user"
+MQTT_PASSWORD = "safepro)*-&$@911@74R^"  # e.g. "my-pass"
+MQTT_SUBSCRIBE_TOPIC = "v301/ugv/commands"  # e.g. "ugv/commands"
 
 DEFAULT_ICE_SERVERS = [
     RTCIceServer(urls=["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"])
@@ -165,9 +174,47 @@ async def main(room_id: str):
                 print(f"Failed to add ICE candidate: {e}")
         await asyncio.sleep(5)
 
+
+def _on_mqtt_message(topic: str, payload: bytes) -> None:
+    try:
+        text = payload.decode("utf-8")
+    except Exception:
+        text = repr(payload)
+    print(f"MQTT message on {topic}: {text}")
+
+
+def _on_mqtt_connect(rc: int) -> None:
+    print(f"MQTT connected (rc={rc})")
+
+
+def _on_mqtt_disconnect(rc: int) -> None:
+    print(f"MQTT disconnected (rc={rc})")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WebRTC webcam streamer using Firebase Firestore signaling")
     parser.add_argument("--room-id", default=DEFAULT_ROOM_ID, help="Firestore room id")
     args = parser.parse_args()
 
-    asyncio.run(main(args.room_id))
+    mqtt_client = None
+    if MQTT_SUBSCRIBE_TOPIC:
+        mqtt_client = MqttClient(
+            MqttConfig(
+                host=MQTT_HOST,
+                port=MQTT_PORT,
+                username=MQTT_USERNAME,
+                password=MQTT_PASSWORD,
+            )
+        )
+        mqtt_client.start(
+            on_message=_on_mqtt_message,
+            on_connect=_on_mqtt_connect,
+            on_disconnect=_on_mqtt_disconnect,
+        )
+        mqtt_client.subscribe(MQTT_SUBSCRIBE_TOPIC)
+        print(f"MQTT subscribed to: {MQTT_SUBSCRIBE_TOPIC}")
+
+    try:
+        asyncio.run(main(args.room_id))
+    finally:
+        if mqtt_client is not None:
+            mqtt_client.stop()
