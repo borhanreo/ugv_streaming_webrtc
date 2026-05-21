@@ -12,6 +12,9 @@
 ### check ioencv
 ```python3 -c "import cv2; print(cv2.__version__)"```
 
+### mqtt install
+```pip install paho-mqtt```
+
 ### 1️⃣ Install the venv tool if missing
 ```sudo apt install python3-venv -y```
 

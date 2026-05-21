@@ -28,6 +28,9 @@ MQTT_PORT = 1883
 MQTT_USERNAME = "safeproMQTT"  # e.g. "my-user"
 MQTT_PASSWORD = "safepro)*-&$@911@74R^"  # e.g. "my-pass"
 MQTT_SUBSCRIBE_TOPIC = "v301/ugv/commands"  # e.g. "ugv/commands"
+MQTT_PUBLISH_TOPIC = "v301/ugv/telemetry"  # e.g. "ugv/telemetry" (set to None to publish to <incoming>/ack)
+
+_mqtt_client: MqttClient | None = None
 
 DEFAULT_ICE_SERVERS = [
     RTCIceServer(urls=["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"])
@@ -182,6 +185,13 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
         text = repr(payload)
     print(f"MQTT message on {topic}: {text}")
 
+    if _mqtt_client is None:
+        return
+
+    publish_topic = MQTT_PUBLISH_TOPIC or f"{topic}/ack"
+    _mqtt_client.publish(publish_topic, f"ACK: {text}")
+    
+
 
 def _on_mqtt_connect(rc: int) -> None:
     print(f"MQTT connected (rc={rc})")
@@ -205,6 +215,8 @@ if __name__ == "__main__":
                 password=MQTT_PASSWORD,
             )
         )
+
+        _mqtt_client = mqtt_client
         mqtt_client.start(
             on_message=_on_mqtt_message,
             on_connect=_on_mqtt_connect,
@@ -218,3 +230,4 @@ if __name__ == "__main__":
     finally:
         if mqtt_client is not None:
             mqtt_client.stop()
+        _mqtt_client = None
