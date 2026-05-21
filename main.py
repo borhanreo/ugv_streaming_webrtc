@@ -15,6 +15,7 @@ from lib.config import (
     MQTT_PUBLISH_TOPIC,
     DEVICE_MAC,
 )
+from lib.json_payload import try_parse_json_payload
 from aiortc import (
     RTCConfiguration,
     RTCIceCandidate,
@@ -178,11 +179,18 @@ async def main(room_id: str):
 
 
 def _on_mqtt_message(topic: str, payload: bytes) -> None:
-    try:
-        text = payload.decode("utf-8")
-    except Exception:
-        text = repr(payload)
-    print(f"MQTT message on {topic}: {text}")
+    parsed = try_parse_json_payload(payload)
+    if parsed.ok:
+        if isinstance(parsed.value, dict):
+            print(f"MQTT JSON object on {topic}: {parsed.value}")
+        elif isinstance(parsed.value, list):
+            print(f"MQTT JSON array on {topic}: {parsed.value}")
+        else:
+            print(f"MQTT JSON value on {topic}: {parsed.value!r}")
+        text = parsed.text
+    else:
+        text = parsed.text
+        print(f"MQTT message on {topic}: {text}")
 
     if _mqtt_client is None:
         return

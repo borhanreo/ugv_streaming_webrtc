@@ -30,5 +30,8 @@
 ### Run python 
 ```python3 main.py --room-id borhan12```
 
+### Run with rpi mac address will be romm
+```python3 main.py```
+
 ### add firebase json
 ```/home/pi/serviceAccountKey.json```
