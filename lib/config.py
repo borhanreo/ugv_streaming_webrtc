@@ -59,4 +59,4 @@ def get_device_mac(prefer_interfaces: tuple[str, ...] = ("wlan0", "eth0")) -> st
 DEVICE_MAC = get_device_mac()
 
 MQTT_SUBSCRIBE_TOPIC = f"v301/ugv/commands/{DEVICE_MAC}"  # v301/ugv/commands/{mac}
-MQTT_PUBLISH_TOPIC = "v301/ugv/telemetry"  # e.g. "ugv/telemetry" (set to None to publish to <incoming>/ack)
+MQTT_PUBLISH_TOPIC = f"v301/ugv/telemetry/{DEVICE_MAC}"  # e.g. "ugv/telemetry/{mac}" (set to None to publish to <incoming>/ack)

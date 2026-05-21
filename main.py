@@ -186,13 +186,14 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
     if _mqtt_client is None:
         return
 
-    publish_topic = MQTT_PUBLISH_TOPIC or f"{topic}/ack"
+    publish_topic = MQTT_PUBLISH_TOPIC or f"{topic}/ack/{DEVICE_MAC}"
     _mqtt_client.publish(publish_topic, f"ACK: {text}")
     
 
 
 def _on_mqtt_connect(rc: int) -> None:
     print(f"MQTT connected (rc={rc})")
+    _mqtt_client.publish(MQTT_PUBLISH_TOPIC, f"UGV {DEVICE_MAC} connected with rc={rc}")
 
 
 def _on_mqtt_disconnect(rc: int) -> None:
