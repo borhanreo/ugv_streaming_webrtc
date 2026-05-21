@@ -85,7 +85,7 @@ async def main(room_id: str):
 
     # 🔹 4. Grab webcam video
     #player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format":"mjpeg", "framerate": "8"})
-    player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format":"h264", "framerate": "15"})
+    player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format":"mjpeg", "framerate": "10"})
     pc.addTrack(player.video)
 
     if is_callee:
