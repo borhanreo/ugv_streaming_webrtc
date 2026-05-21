@@ -3,9 +3,7 @@ import asyncio
 import firebase_admin
 from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
-from aiortc.contrib.media import MediaStreamTrack
-import cv2
-import av
+from lib.resized_video_track import ResizedVideoTrack
 from aiortc import (
     RTCConfiguration,
     RTCIceCandidate,
@@ -13,23 +11,6 @@ from aiortc import (
     RTCPeerConnection,
     RTCSessionDescription,
 )
-
-
-class ResizedVideoTrack(MediaStreamTrack):
-    kind = "video"
-    def __init__(self, track, width, height):
-        super().__init__()
-        self.track = track
-        self.width = width
-        self.height = height
-
-    async def recv(self):
-        frame = await self.track.recv()
-        img = frame.to_ndarray(format="bgr24")
-        img = cv2.resize(img, (self.width, self.height))
-        new_frame = av.VideoFrame.from_ndarray(img, format="bgr24")
-        new_frame.pts, new_frame.time_base = frame.pts, frame.time_base
-        return new_frame
 
 
 # 🔹 1. Initialize Firebase
