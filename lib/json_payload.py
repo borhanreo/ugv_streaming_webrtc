@@ -53,8 +53,21 @@ def ensure_json_array(value: Any) -> list[Any]:
         return value
     raise TypeError(f"Expected JSON array (list), got {type(value).__name__}")
 
-def getValueByKey(obj: dict[str, Any], key: str) -> Any:
-    """Get value by key from JSON object (dict)."""
-    if key in obj:
+
+_MISSING = object()
+
+
+def get_value_by_key(obj: dict[str, Any], key: str, default: Any = _MISSING) -> Any:
+    """Get value by key from a JSON object (dict).
+
+    - If default is provided, returns default when key is missing.
+    - If default is not provided, raises KeyError when key is missing.
+    """
+    if default is _MISSING:
         return obj[key]
-    raise KeyError(f"Key '{key}' not found in JSON object")
+    return obj.get(key, default)
+
+
+def getValueByKey(obj: dict[str, Any], key: str, default: Any = _MISSING) -> Any:
+    # Backward-compatible alias for existing code.
+    return get_value_by_key(obj, key, default)
