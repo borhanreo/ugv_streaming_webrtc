@@ -190,6 +190,8 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
         text = parsed.text
     else:
         text = parsed.text
+        type = getValueByKey(text, "t")  # for type narrowing
+        print(f"MQTT non-JSON payload on {type}: {text}")
         print(f"MQTT message on {topic}: {text}")
 
     if _mqtt_client is None:

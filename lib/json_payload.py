@@ -52,3 +52,9 @@ def ensure_json_array(value: Any) -> list[Any]:
     if isinstance(value, list):
         return value
     raise TypeError(f"Expected JSON array (list), got {type(value).__name__}")
+
+def getValueByKey(obj: dict[str, Any], key: str) -> Any:
+    """Get value by key from JSON object (dict)."""
+    if key in obj:
+        return obj[key]
+    raise KeyError(f"Key '{key}' not found in JSON object")
