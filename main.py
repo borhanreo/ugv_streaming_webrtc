@@ -202,7 +202,7 @@ def _on_mqtt_disconnect(rc: int) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WebRTC webcam streamer using Firebase Firestore signaling")
-    parser.add_argument("--room-id", default=DEFAULT_ROOM_ID, help="Firestore room id")
+    parser.add_argument("--room-id", default=DEVICE_MAC, help="Firestore room id")
     args = parser.parse_args()
 
     mqtt_client = None
