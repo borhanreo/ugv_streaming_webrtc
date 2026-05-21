@@ -13,6 +13,7 @@ from lib.config import (
     MQTT_PASSWORD,
     MQTT_SUBSCRIBE_TOPIC,
     MQTT_PUBLISH_TOPIC,
+    DEVICE_MAC,
 )
 from aiortc import (
     RTCConfiguration,
