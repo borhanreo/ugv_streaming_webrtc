@@ -132,8 +132,12 @@ python3 main.py --service-account ... --join <ROOM_ID> --width 1280 --height 720
 
 ## install
 ```sudo apt update && sudo apt upgrade -y```
+
 ```sudo apt install python3 python3-pip v4l-utils -y```
+
 ```python3 -m pip install aiortc firebase-admin```
+
+```pip install opencv-python```
 
 ### 1️⃣ Install the venv tool if missing
 ```sudo apt install python3-venv -y```
