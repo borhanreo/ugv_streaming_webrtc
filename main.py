@@ -101,7 +101,7 @@ async def main(room_id: str):
     # player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format": "yuyv422", "framerate": "10"})
     # pc.addTrack(player.video)
     player = MediaPlayer("/dev/video0", format="v4l2", options={"framerate": "15"})
-    scaled = ResizedVideoTrack(player.video, 320, 240)
+    scaled = ResizedVideoTrack(player.video, 426, 240)
     pc.addTrack(scaled)
 
     if is_callee:
