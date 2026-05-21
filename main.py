@@ -5,6 +5,15 @@ from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
+from lib.config import (
+    DEFAULT_ROOM_ID,
+    MQTT_HOST,
+    MQTT_PORT,
+    MQTT_USERNAME,
+    MQTT_PASSWORD,
+    MQTT_SUBSCRIBE_TOPIC,
+    MQTT_PUBLISH_TOPIC,
+)
 from aiortc import (
     RTCConfiguration,
     RTCIceCandidate,
@@ -18,17 +27,6 @@ from aiortc import (
 cred = credentials.Certificate("/home/pi/serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
-
-DEFAULT_ROOM_ID = "borhan123"
-
-# MQTT (static configuration)
-# Set MQTT_SUBSCRIBE_TOPIC to a topic string to enable MQTT.
-MQTT_HOST = "emq.safeprotechnologiesportal.com"
-MQTT_PORT = 1883
-MQTT_USERNAME = "safeproMQTT"  # e.g. "my-user"
-MQTT_PASSWORD = "safepro)*-&$@911@74R^"  # e.g. "my-pass"
-MQTT_SUBSCRIBE_TOPIC = "v301/ugv/commands"  # e.g. "ugv/commands"
-MQTT_PUBLISH_TOPIC = "v301/ugv/telemetry"  # e.g. "ugv/telemetry" (set to None to publish to <incoming>/ack)
 
 _mqtt_client: MqttClient | None = None
 

@@ -4,6 +4,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
+from lib.config import DEFAULT_ROOM_ID
 from aiortc import (
     RTCConfiguration,
     RTCIceCandidate,
@@ -17,8 +18,6 @@ from aiortc import (
 cred = credentials.Certificate("/home/pi/serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
-
-DEFAULT_ROOM_ID = "borhan123"
 
 DEFAULT_ICE_SERVERS = [
     RTCIceServer(urls=["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"])
