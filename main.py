@@ -182,7 +182,8 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
     parsed = try_parse_json_payload(payload)
     if parsed.ok:
         if isinstance(parsed.value, dict):
-            print(f"MQTT JSON object on {topic}: {parsed.value}")
+            print(f"MQTT JSON object on {topic}: {parsed.value}")            
+            print(f"Value of 't': {getValueByKey(parsed.value, 't')}")
         elif isinstance(parsed.value, list):
             print(f"MQTT JSON array on {topic}: {parsed.value}")
         else:
