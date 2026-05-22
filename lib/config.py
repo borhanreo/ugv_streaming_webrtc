@@ -6,6 +6,7 @@ Keep runtime settings here so application scripts (e.g. main.py) stay focused on
 from __future__ import annotations
 
 import os
+import socket
 import uuid
 import re
 
@@ -56,7 +57,34 @@ def get_device_mac(prefer_interfaces: tuple[str, ...] = ("wlan0", "eth0")) -> st
 	return mac
 
 
-DEVICE_MAC = get_device_mac()
+def get_device_ip() -> str:
+	"""Best-effort local IP detection.
 
+	Prefers an explicit environment override, otherwise detects the primary outbound
+	interface IP using a UDP "connect" probe (no packets need to be received).
+	"""
+	env_ip = os.environ.get("UGV_DEVICE_IP") or os.environ.get("DEVICE_IP")
+	if env_ip:
+		return env_ip
+
+	# UDP probe to determine which local IP would be used to reach the internet.
+	# This does not require the remote host to be reachable; it just needs routing.
+	try:
+		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+			s.connect(("8.8.8.8", 80))
+			ip = s.getsockname()[0]
+			if ip:
+				return ip
+	except OSError:
+		pass
+
+	return "127.0.0.1"
+
+
+DEVICE_MAC = get_device_mac()
+DEVICE_IP = get_device_ip()
+
+# Backward-compatible alias (older code had a typo).
+DEVIC_IP = DEVICE_IP
 MQTT_SUBSCRIBE_TOPIC = f"v301/ugv/commands/{DEVICE_MAC}"  # v301/ugv/commands/{mac}
 MQTT_PUBLISH_TOPIC = f"v301/ugv/telemetry/{DEVICE_MAC}"  # e.g. "ugv/telemetry/{mac}" (set to None to publish to <incoming>/ack)

@@ -5,6 +5,9 @@ from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
+##Motor control library for Raspberry Pi (Adafruit Motor Shield compatible)
+from lib.AFMotor import AFMotorController, AF_DCMotor
+
 from lib.config import (
     DEFAULT_ROOM_ID,
     MQTT_HOST,
@@ -15,7 +18,7 @@ from lib.config import (
     MQTT_PUBLISH_TOPIC,
     DEVICE_MAC,
 )
-from lib.json_payload import getValueByKey, try_parse_json_payload
+from lib.json_payload import getValueByKey, try_parse_json_payload, DEVICE_IP
 from aiortc import (
     RTCConfiguration,
     RTCIceCandidate,
@@ -210,7 +213,8 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
 
 def _on_mqtt_connect(rc: int) -> None:
     print(f"MQTT connected (rc={rc})")
-    _mqtt_client.publish(MQTT_PUBLISH_TOPIC, f"UGV {DEVICE_MAC} connected with rc={rc}")
+    _mqtt_client.publish(MQTT_PUBLISH_TOPIC, f"UGV {DEVICE_MAC} ip {DEVICE_IP} connected with rc={rc}")
+
 
 
 def _on_mqtt_disconnect(rc: int) -> None:
