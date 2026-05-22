@@ -4,6 +4,7 @@
 # ============================================
 
 import paho.mqtt.client as mqtt
+from paho.mqtt.enums import CallbackAPIVersion
 
 # --- MQTT Broker Configuration ---
 BROKER = "emq.safeprotechnologiesportal.com"   # You can replace this with your broker's IP or hostname
@@ -26,7 +27,7 @@ def on_message(client, userdata, msg):
     print(f"📩 Received: {msg.payload.decode()} from topic: {msg.topic}")
 
 # --- Create an MQTT client instance ---
-client = mqtt.Client(CLIENT_ID)
+client = mqtt.Client(client_id=CLIENT_ID, callback_api_version=CallbackAPIVersion.VERSION1)
 
 # Attach callback functions
 client.on_connect = on_connect
