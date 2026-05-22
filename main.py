@@ -184,6 +184,13 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
         if isinstance(parsed.value, dict):
             print(f"MQTT JSON object on {topic}: {parsed.value}")            
             print(f"Value of 't': {getValueByKey(parsed.value, 't')}")
+            match getValueByKey(parsed.value, 't'):
+                case "1":
+                    print("Received command: move forward")
+                case "2":
+                    print("Received command: move backward")
+                case _:
+                    print("Received command: unknown")
         elif isinstance(parsed.value, list):
             print(f"MQTT JSON array on {topic}: {parsed.value}")
         else:
