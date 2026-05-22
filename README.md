@@ -37,3 +37,6 @@
 
 ### add firebase json
 ```/home/pi/serviceAccountKey.json```
+
+### test ip
+```192.168.24.42```
