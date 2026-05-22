@@ -6,6 +6,8 @@
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
+
+
 # --- MQTT Broker Configuration ---
 BROKER = "emq.safeprotechnologiesportal.com"   # You can replace this with your broker's IP or hostname
 PORT = 1883  

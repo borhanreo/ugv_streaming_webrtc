@@ -15,10 +15,10 @@ DEFAULT_ROOM_ID = "borhan123"
 
 # MQTT (static configuration)
 # Set MQTT_SUBSCRIBE_TOPIC to a topic string to enable MQTT.
-MQTT_HOST = "emq.safeprotechnologiesportal.com"
+MQTT_HOST = "host"
 MQTT_PORT = 1883
-MQTT_USERNAME = "safeproMQTT"  # e.g. "my-user"
-MQTT_PASSWORD = "safepro)*-&$@911@74R^"  # e.g. "my-pass"
+MQTT_USERNAME = "username"  # e.g. "my-user"
+MQTT_PASSWORD = "password"  # e.g. "my-pass"
 
 
 def _normalize_mac(value: str) -> str:
