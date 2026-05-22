@@ -105,7 +105,7 @@ async def main(room_id: str):
     #player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format":"mjpeg", "framerate": "8"})
     # player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format": "yuyv422", "framerate": "10"})
     # pc.addTrack(player.video)
-    player = MediaPlayer("/dev/video0", format="v4l2", options={"framerate": "15"})
+    player = MediaPlayer("/dev/video0", format="v4l2", options={"framerate": "10"})
     scaled = ResizedVideoTrack(player.video, 426, 240)
     pc.addTrack(scaled)
 
