@@ -85,6 +85,5 @@ DEVICE_MAC = get_device_mac()
 DEVICE_IP = get_device_ip()
 
 # Backward-compatible alias (older code had a typo).
-DEVIC_IP = DEVICE_IP
 MQTT_SUBSCRIBE_TOPIC = f"v301/ugv/commands/{DEVICE_MAC}"  # v301/ugv/commands/{mac}
 MQTT_PUBLISH_TOPIC = f"v301/ugv/telemetry/{DEVICE_MAC}"  # e.g. "ugv/telemetry/{mac}" (set to None to publish to <incoming>/ack)

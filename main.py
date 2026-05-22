@@ -17,8 +17,9 @@ from lib.config import (
     MQTT_SUBSCRIBE_TOPIC,
     MQTT_PUBLISH_TOPIC,
     DEVICE_MAC,
+    DEVICE_IP,
 )
-from lib.json_payload import getValueByKey, try_parse_json_payload, DEVICE_IP
+from lib.json_payload import getValueByKey, try_parse_json_payload
 from aiortc import (
     RTCConfiguration,
     RTCIceCandidate,
