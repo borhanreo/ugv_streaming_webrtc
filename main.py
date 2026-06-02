@@ -46,6 +46,26 @@ DEFAULT_ICE_SERVERS = [
 ]
 
 
+def _coerce_int(value):
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        # Prevent True/False from becoming 1/0.
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str):
+        s = value.strip()
+        if s.isdigit() or (s.startswith("-") and s[1:].isdigit()):
+            try:
+                return int(s)
+            except Exception:
+                return value
+    return value
+
+
 def _candidate_to_firestore(candidate: RTCIceCandidate):
     # Mirrors browser's event.candidate.toJSON() shape.
     return {
@@ -81,8 +101,10 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
             if parsed.ok:
                 if isinstance(parsed.value, dict):
                                
-                    print(f"Value of 't': {getValueByKey(parsed.value, 't')}")
-                    match getValueByKey(parsed.value, 't'):
+                    t_raw = getValueByKey(parsed.value, 't')
+                    t = _coerce_int(t_raw)
+                    print(f"Value of 't': {t}")
+                    match t:
                         case 1:
                             print("Received command: move forward")
                             af_motor_forward(speed=255)
@@ -216,12 +238,20 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
     if parsed.ok:
         if isinstance(parsed.value, dict):
             print(f"MQTT JSON object on {topic}: {parsed.value}")            
-            print(f"Value of 't': {getValueByKey(parsed.value, 't')}")
-            match getValueByKey(parsed.value, 't'):
-                case "1":
+            t_raw = getValueByKey(parsed.value, 't', None)
+            t = _coerce_int(t_raw)
+            print(f"Value of 't': {t}")
+
+            match t:
+                case 1:
                     print("Received command: move forward")
-                case "2":
+                    af_motor_forward(speed=255)
+                case 2:
                     print("Received command: move backward")
+                    af_motor_backward(speed=255)
+                case 0:
+                    print("Received command: stop")
+                    af_motor_stop()
                 case _:
                     print("Received command: unknown")
         elif isinstance(parsed.value, list):
