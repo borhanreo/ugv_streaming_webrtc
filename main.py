@@ -72,6 +72,23 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
             if isinstance(message, (bytes, bytearray)):
                 message = message.decode("utf-8", errors="replace")
             print(f"DataChannel message: {message}")
+            parsed = try_parse_json_payload(message)
+            if parsed.ok:
+                if isinstance(parsed.value, dict):
+                               
+                    print(f"Value of 't': {getValueByKey(parsed.value, 't')}")
+                    match getValueByKey(parsed.value, 't'):
+                        case "1":
+                            print("Received command: move forward")
+                        case "2":
+                            print("Received command: move backward")
+                        case _:
+                            print("Received command: unknown")
+                elif isinstance(parsed.value, list):
+                    print(f"MQTT JSON array on {topic}: {parsed.value}")
+                else:
+                    print(f"MQTT JSON value on {topic}: {parsed.value!r}")
+                text = parsed.text
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
