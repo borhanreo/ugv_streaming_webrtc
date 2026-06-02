@@ -29,6 +29,11 @@
 ### mqtt install
 ```pip install paho-mqtt```
 
+
+
+### add firebase json
+```/home/pi/serviceAccountKey.json```
+
 ### Run python 
 ```python3 main.py --room-id borhan12```
 
@@ -38,8 +43,45 @@
 ### Run without --room-id but use a random room id (published to MQTT)
 ```python3 main.py --use-mac-room-id false```
 
-### add firebase json
-```/home/pi/serviceAccountKey.json```
-
 ### test ip
 ```192.168.24.42```
+
+
+# Auto starty in Rpi
+
+```sudo nano /usr/local/bin/start_gcs_ugv.sh```
+<pre>
+#!/bin/bash
+#!--------------------------------------
+#!Script: start_firebase_and_proxy.sh
+#!Purpose: Start Firebase and then Proxy Server
+#!--------------------------------------
+cd /home/pi/ugv/ugv_streaming_webrtc || exit
+#! 1️⃣ Start FGCS-UGV and wait until it exits
+echo "Starting Firebase GCS..."
+cd /home/pi/ugv/ugv_streaming_webrtc
+#! Active env
+source ~/webrtc-env/bin/activate
+python3 main.py --use-mac-room-id false
+echo "Firebase Done"
+#! 2️⃣ Start proxy server only after Firebase process completes
+</pre>
+
+## Permission
+```sudo chmod +x /usr/local/bin/start_gcs_ugv.sh```
+
+### for systemctk  service
+```sudo nano /etc/systemd/system/acs_ugv.service```
+
+###⚡ Step 3 – Enable and Start the Service
+ #### load file to systemctl
+
+```sudo systemctl daemon-reload```
+
+```sudo systemctl enable acs_ugv.service```
+
+```sudo systemctl start acs_ugv.service```
+
+```sudo systemctl status acs_ugv.service```
+
+```sudo systemctl restart acs_ugv.service```
