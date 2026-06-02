@@ -29,10 +29,12 @@
 ### mqtt install
 ```pip install paho-mqtt```
 
-
+## RPI GPIO
+```pip install RPi.GPIO```
 
 ### add firebase json
 ```/home/pi/serviceAccountKey.json```
+
 
 ### Run python 
 ```python3 main.py --room-id borhan12```
@@ -42,6 +44,8 @@
 
 ### Run without --room-id but use a random room id (published to MQTT)
 ```python3 main.py --use-mac-room-id false```
+
+
 
 ### test ip
 ```192.168.24.42```
@@ -53,8 +57,8 @@
 <pre>
 #!/bin/bash
 #!--------------------------------------
-#!Script: start_firebase_and_proxy.sh
-#!Purpose: Start Firebase and then Proxy Server
+#!Script: start_gcs_ugv.sh
+#!Purpose: ugc Server start
 #!--------------------------------------
 cd /home/pi/ugv/ugv_streaming_webrtc || exit
 #! 1️⃣ Start FGCS-UGV and wait until it exits
@@ -63,8 +67,8 @@ cd /home/pi/ugv/ugv_streaming_webrtc
 #! Active env
 source ~/webrtc-env/bin/activate
 python3 main.py --use-mac-room-id false
-echo "Firebase Done"
-#! 2️⃣ Start proxy server only after Firebase process completes
+echo "AGC Done"
+#! 2️⃣ Start AGC completes
 </pre>
 
 ## Permission
@@ -72,6 +76,25 @@ echo "Firebase Done"
 
 ### for systemctk  service
 ```sudo nano /etc/systemd/system/acs_ugv.service```
+
+<pre>
+[Unit]
+Description=ACS Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/ugv/ugv_streaming_webrtc
+
+ExecStart=/usr/local/bin/start_gcs_ugv.sh
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+</pre>
 
 ###⚡ Step 3 – Enable and Start the Service
  #### load file to systemctl
@@ -85,3 +108,6 @@ echo "Firebase Done"
 ```sudo systemctl status acs_ugv.service```
 
 ```sudo systemctl restart acs_ugv.service```
+
+# Show recent logs for this boot
+```journalctl -u acs_ugv.service -b -n 200 --no-pager```

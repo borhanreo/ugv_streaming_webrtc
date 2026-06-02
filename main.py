@@ -7,7 +7,7 @@ from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
 ##Motor control library for Raspberry Pi (Adafruit Motor Shield compatible)
-from lib.AFMotor import AFMotorController, AF_DCMotor
+from lib.AFMotor import af_motor_backward, af_motor_forward, af_motor_stop
 
 from lib.config import (
     DEFAULT_ROOM_ID,
@@ -85,8 +85,14 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
                     match getValueByKey(parsed.value, 't'):
                         case "1":
                             print("Received command: move forward")
+                            af_motor_forward(speed=255)
+                                                             
                         case "2":
                             print("Received command: move backward")
+                            af_motor_backward(speed=255)
+                        case "0":
+                            print("Received command: stop")
+                            af_motor_stop()
                         case _:
                             print("Received command: unknown")
                 elif isinstance(parsed.value, list):
