@@ -32,8 +32,11 @@
 ### Run python 
 ```python3 main.py --room-id borhan12```
 
-### Run with rpi mac address will be romm
+### Run without --room-id (default uses MAC)
 ```python3 main.py```
+
+### Run without --room-id but use a random room id (published to MQTT)
+```python3 main.py --use-mac-room-id false```
 
 ### add firebase json
 ```/home/pi/serviceAccountKey.json```

@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import uuid
 import firebase_admin
 from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
@@ -28,11 +29,15 @@ from aiortc import (
     RTCSessionDescription,
 )
 
+_effective_room_id: str | None = None
 
-# 🔹 1. Initialize Firebase
-cred = credentials.Certificate("/home/pi/serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+
+def _get_firestore_client():
+    # Lazy init so `python main.py --help` works even when credentials are missing.
+    if not firebase_admin._apps:
+        cred = credentials.Certificate("/home/pi/serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+    return firestore.client()
 
 _mqtt_client: MqttClient | None = None
 
@@ -85,9 +90,9 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
                         case _:
                             print("Received command: unknown")
                 elif isinstance(parsed.value, list):
-                    print(f"MQTT JSON array on {topic}: {parsed.value}")
+                    print(f"DataChannel JSON array: {parsed.value}")
                 else:
-                    print(f"MQTT JSON value on {topic}: {parsed.value!r}")
+                    print(f"DataChannel JSON value: {parsed.value!r}")
                 text = parsed.text
 
     @pc.on("connectionstatechange")
@@ -103,6 +108,7 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
 
 
 async def main(room_id: str):
+    db = _get_firestore_client()
     # 🔹 2. Define Firestore document path (room)
     room_ref = db.collection("rooms").document(room_id)
 
@@ -231,17 +237,49 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
 
 def _on_mqtt_connect(rc: int) -> None:
     print(f"MQTT connected (rc={rc})")
-    _mqtt_client.publish(MQTT_PUBLISH_TOPIC, f"UGV {DEVICE_MAC} ip {DEVICE_IP} connected with rc={rc}")
+    room_part = f" room {_effective_room_id}" if _effective_room_id else ""
+    _mqtt_client.publish(
+        MQTT_PUBLISH_TOPIC,
+        f"UGV {DEVICE_MAC}{room_part} ip {DEVICE_IP} connected with rc={rc}",
+    )
 
 
 
 def _on_mqtt_disconnect(rc: int) -> None:
     print(f"MQTT disconnected (rc={rc})")
 
+
+def _str_to_bool(value: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in {"true", "1", "yes", "y", "on"}:
+        return True
+    if normalized in {"false", "0", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError("Expected true/false")
+
+
+def _choose_room_id(room_id_arg: str | None, *, use_mac_when_missing: bool) -> str:
+    if room_id_arg:
+        return room_id_arg
+    if use_mac_when_missing:
+        return DEVICE_MAC
+    return f"rnd_{uuid.uuid4().hex}"
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WebRTC webcam streamer using Firebase Firestore signaling")
-    parser.add_argument("--room-id", default=DEVICE_MAC, help="Firestore room id")
+    parser.add_argument("--room-id", default=None, help="Firestore room id")
+    parser.add_argument(
+        "--use-mac-room-id",
+        type=_str_to_bool,
+        default=True,
+        help="When --room-id is not set: true=use device MAC, false=use random room id (published to MQTT).",
+    )
     args = parser.parse_args()
+
+    effective_room_id = _choose_room_id(args.room_id, use_mac_when_missing=args.use_mac_room_id)
+    _effective_room_id = effective_room_id
 
     mqtt_client = None
     if MQTT_SUBSCRIBE_TOPIC:
@@ -264,7 +302,7 @@ if __name__ == "__main__":
         print(f"MQTT subscribed to: {MQTT_SUBSCRIBE_TOPIC}")
 
     try:
-        asyncio.run(main(args.room_id))
+        asyncio.run(main(effective_room_id))
     finally:
         if mqtt_client is not None:
             mqtt_client.stop()
