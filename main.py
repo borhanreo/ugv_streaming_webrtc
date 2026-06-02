@@ -83,14 +83,14 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
                                
                     print(f"Value of 't': {getValueByKey(parsed.value, 't')}")
                     match getValueByKey(parsed.value, 't'):
-                        case "1":
+                        case 1:
                             print("Received command: move forward")
                             af_motor_forward(speed=255)
                                                              
-                        case "2":
+                        case 2:
                             print("Received command: move backward")
                             af_motor_backward(speed=255)
-                        case "0":
+                        case 0:
                             print("Received command: stop")
                             af_motor_stop()
                         case _:
