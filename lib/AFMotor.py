@@ -304,3 +304,11 @@ def af_motor_backward(*, speed: int = 255) -> None:
 
 def af_motor_stop() -> None:
     _get_default_driver().stop()
+
+
+def af_motor_turn_left(*, speed: int = 255) -> None:
+    _get_default_driver().turn_left(speed=speed)
+
+
+def af_motor_turn_right(*, speed: int = 255) -> None:
+    _get_default_driver().turn_right(speed=speed)

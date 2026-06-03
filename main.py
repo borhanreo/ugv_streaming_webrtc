@@ -7,7 +7,7 @@ from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
 ##Motor control library for Raspberry Pi (Adafruit Motor Shield compatible)
-from lib.AFMotor import af_motor_backward, af_motor_forward, af_motor_stop
+from lib.AFMotor import af_motor_backward, af_motor_forward, af_motor_stop, af_motor_turn_left, af_motor_turn_right
 from lib import Constant
 from lib.config import (
     DEFAULT_ROOM_ID,
@@ -261,7 +261,14 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
                     af_motor_forward(speed=255)
                 case Constant.MQTT_T_VAL_BACKWARD:
                     print("Received command: move backward")
-                    #af_motor_backward(speed=255)
+                    af_motor_backward(speed=255)
+                case Constant.MQTT_T_VAL_LEFT:
+                    print("Received command: turn left")
+                    af_motor_turn_left()
+                case Constant.MQTT_T_VAL_RIGHT:
+                    print("Received command: turn right")
+                    af_motor_turn_right()
+                    
                 case Constant.MQTT_T_VAL_STOP:
                     print("Received command: stop")
                     #af_motor_stop()
