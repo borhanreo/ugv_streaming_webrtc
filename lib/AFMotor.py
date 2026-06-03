@@ -113,10 +113,6 @@ class AFMotorShieldV1:
             gpio.OUT,
         )
 
-        # reset latch
-        self._latch_state = 0
-        self.latch_tx()
-
         # enable outputs (active-low on v1)
         gpio.output(self._pins.motorenable, gpio.LOW)
 
@@ -128,11 +124,15 @@ class AFMotorShieldV1:
         for pwm in self._pwms.values():
             pwm.start(0)
 
+        # Mark initialized before any method that might call back into init.
         self._initialized = True
 
-    def latch_tx(self) -> None:
-        """Write the 8-bit latch_state to the 74HC595."""
-        self._ensure_initialized()
+        # Reset latch (all outputs low) using raw TX to avoid recursion.
+        self._latch_state = 0
+        self._latch_tx_raw()
+
+    def _latch_tx_raw(self) -> None:
+        """Write the 8-bit latch_state to the 74HC595 without init checks."""
         gpio = self._gpio
 
         gpio.output(self._pins.motorlatch, gpio.LOW)
@@ -141,11 +141,19 @@ class AFMotorShieldV1:
             gpio.output(self._pins.motorclk, gpio.LOW)
 
             mask = 1 << (7 - i)
-            gpio.output(self._pins.motordata, gpio.HIGH if (self._latch_state & mask) else gpio.LOW)
+            gpio.output(
+                self._pins.motordata,
+                gpio.HIGH if (self._latch_state & mask) else gpio.LOW,
+            )
 
             gpio.output(self._pins.motorclk, gpio.HIGH)
 
         gpio.output(self._pins.motorlatch, gpio.HIGH)
+
+    def latch_tx(self) -> None:
+        """Write the 8-bit latch_state to the 74HC595."""
+        self._ensure_initialized()
+        self._latch_tx_raw()
 
     def _set_latch_bits(self, *, a_bit: int, b_bit: int, cmd: int) -> None:
         if cmd == FORWARD:
