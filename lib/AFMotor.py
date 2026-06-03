@@ -20,7 +20,7 @@ immediately crash; GPIO is only required when you construct/use the driver.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 
 try:
@@ -89,7 +89,7 @@ class AFMotorShieldV1:
 
         self._gpio = gpio
         self._latch_state = 0
-        self._pwms: Dict[int, "_GPIO.PWM"] = {}
+        self._pwms: Dict[int, Any] = {}
         self._initialized = False
 
     def _ensure_initialized(self) -> None:
@@ -264,10 +264,25 @@ class UGVMotorDriver:
 _default_driver: Optional[UGVMotorDriver] = None
 
 
+# Default wiring for this project (BCM numbering).
+# Shield PWM pins: D11->GPIO20, D3->GPIO21, D6->GPIO23, D5->GPIO24
+# Shift-register pins (direction): D12->GPIO12, D4->GPIO4, D7->GPIO7, D8->GPIO8
+DEFAULT_PINS = AFMotorShieldV1Pins(
+    motorlatch=12,
+    motorclk=4,
+    motorenable=7,
+    motordata=8,
+    pwm_m1=20,
+    pwm_m2=21,
+    pwm_m3=23,
+    pwm_m4=24,
+)
+
+
 def _get_default_driver() -> UGVMotorDriver:
     global _default_driver
     if _default_driver is None:
-        _default_driver = UGVMotorDriver()
+        _default_driver = UGVMotorDriver(pins=DEFAULT_PINS)
     return _default_driver
 
 
