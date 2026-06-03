@@ -8,7 +8,7 @@ from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
 ##Motor control library for Raspberry Pi (Adafruit Motor Shield compatible)
 from lib.AFMotor import af_motor_backward, af_motor_forward, af_motor_stop
-
+from lib import Constant
 from lib.config import (
     DEFAULT_ROOM_ID,
     MQTT_HOST,
@@ -233,6 +233,19 @@ async def main(room_id: str):
         await asyncio.sleep(5)
 
 
+def device_restart() -> None:
+    """Restart the device by executing system restart command."""
+    import os
+    import subprocess
+    print("Initiating device restart...")
+    try:
+        subprocess.run(['sudo', 'reboot'], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during restart: {e}")
+    except Exception as e:
+        print(f"Unexpected error during restart: {e}")
+
+
 def _on_mqtt_message(topic: str, payload: bytes) -> None:
     parsed = try_parse_json_payload(payload)
     if parsed.ok:
@@ -243,15 +256,18 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
             print(f"Value of 't': {t}")
 
             match t:
-                case 1:
+                case Constant.MQTT_T_VAL_FORWARD:
                     print("Received command: move forward")
-                    af_motor_forward(speed=255)
-                case 2:
+                    #af_motor_forward(speed=255)
+                case Constant.MQTT_T_VAL_BACKWARD:
                     print("Received command: move backward")
-                    af_motor_backward(speed=255)
-                case 0:
+                    #af_motor_backward(speed=255)
+                case Constant.MQTT_T_VAL_STOP:
                     print("Received command: stop")
-                    af_motor_stop()
+                    #af_motor_stop()
+                case Constant.MQTT_T_VAL_RPI_RESTART:
+                    print("Received command: restart Raspberry Pi")
+                    device_restart()
                 case _:
                     print("Received command: unknown")
         elif isinstance(parsed.value, list):
