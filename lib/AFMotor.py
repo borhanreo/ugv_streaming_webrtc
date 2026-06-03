@@ -20,6 +20,7 @@ immediately crash; GPIO is only required when you construct/use the driver.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import threading
 from typing import Any, Dict, Optional
 
 
@@ -245,25 +246,45 @@ class UGVMotorDriver:
         self._shield = AFMotorShieldV1(pins=pins, pwm_hz=pwm_hz)
         self._left = self._shield.dc_motor(left_motor)
         self._right = self._shield.dc_motor(right_motor)
+        self._lock = threading.Lock()
 
     def forward(self, *, speed: int = 255) -> None:
-        self._left.setSpeed(speed)
-        self._right.setSpeed(speed)
-        self._left.run(FORWARD)
-        self._right.run(FORWARD)
+        with self._lock:
+            self._left.setSpeed(speed)
+            self._right.setSpeed(speed)
+            self._left.run(FORWARD)
+            self._right.run(FORWARD)
 
     def backward(self, *, speed: int = 255) -> None:
-        self._left.setSpeed(speed)
-        self._right.setSpeed(speed)
-        self._left.run(BACKWARD)
-        self._right.run(BACKWARD)
+        with self._lock:
+            self._left.setSpeed(speed)
+            self._right.setSpeed(speed)
+            self._left.run(BACKWARD)
+            self._right.run(BACKWARD)
+
+    def turn_left(self, *, speed: int = 255) -> None:
+        """Turn left (differential drive): stop/slow left, drive right forward."""
+        with self._lock:
+            self._left.setSpeed(0)
+            self._left.run(RELEASE)
+            self._right.setSpeed(speed)
+            self._right.run(FORWARD)
+
+    def turn_right(self, *, speed: int = 255) -> None:
+        """Turn right (differential drive): stop/slow right, drive left forward."""
+        with self._lock:
+            self._right.setSpeed(0)
+            self._right.run(RELEASE)
+            self._left.setSpeed(speed)
+            self._left.run(FORWARD)
 
     def stop(self) -> None:
-        self._left.setSpeed(0)
-        self._right.setSpeed(0)
-        self._left.run(RELEASE)
-        self._right.run(RELEASE)
-
+        with self._lock:
+            self._left.setSpeed(0)
+            self._right.setSpeed(0)
+            self._left.run(RELEASE)
+            self._right.run(RELEASE)
+    
     def cleanup(self) -> None:
         self._shield.cleanup()
 
@@ -304,6 +325,14 @@ def af_motor_backward(*, speed: int = 255) -> None:
 
 def af_motor_stop() -> None:
     _get_default_driver().stop()
+
+
+def af_motor_turn_left(*, speed: int = 255) -> None:
+    _get_default_driver().turn_left(speed=speed)
+
+
+def af_motor_turn_right(*, speed: int = 255) -> None:
+    _get_default_driver().turn_right(speed=speed)
 
 
 def af_motor_turn_left(*, speed: int = 255) -> None:
