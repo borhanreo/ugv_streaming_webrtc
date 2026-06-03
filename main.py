@@ -7,7 +7,17 @@ from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
 ##Motor control library for Raspberry Pi (Adafruit Motor Shield compatible)
-from lib.AFMotor import af_motor_backward, af_motor_forward, af_motor_stop, af_motor_turn_left, af_motor_turn_right
+from lib.AFMotor import (
+    af_motor_backward,
+    af_motor_forward,
+    af_motor_stop,
+    af_motor_turn_left,
+    af_motor_turn_right,
+    af_servo1_angle,
+    af_servo1_step,
+    af_servo2_angle,
+    af_servo2_step,
+)
 from lib import Constant
 from lib.config import (
     DEFAULT_ROOM_ID,
@@ -244,7 +254,7 @@ def device_restart() -> None:
         print(f"Error during restart: {e}")
     except Exception as e:
         print(f"Unexpected error during restart: {e}")
-
+    
 
 def _on_mqtt_message(topic: str, payload: bytes) -> None:
     parsed = try_parse_json_payload(payload)
@@ -253,6 +263,8 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
             print(f"MQTT JSON object on {topic}: {parsed.value}")            
             t_raw = getValueByKey(parsed.value, 't', None)
             t = _coerce_int(t_raw)
+            v_raw = getValueByKey(parsed.value, 'v', None)
+            v = _coerce_int(v_raw)
             print(f"Value of 't': {t}")
 
             match t:
@@ -272,6 +284,26 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
                 case Constant.MQTT_T_VAL_STOP:
                     print("Received command: stop")
                     #af_motor_stop()
+                case Constant.MQTT_T_VAL_CAMERA_UP:
+                    print("Received command: camera up")
+                    step = int(v) if isinstance(v, int) else 10
+                    af_servo2_step(delta=abs(step))
+                case Constant.MQTT_T_VAL_CAMERA_DOWN:
+                    print("Received command: camera down")
+                    step = int(v) if isinstance(v, int) else 10
+                    af_servo2_step(delta=-abs(step))
+                case Constant.MQTT_T_VAL_CAMERA_LEFT:
+                    print("Received command: camera left")
+                    step = int(v) if isinstance(v, int) else 10
+                    af_servo1_step(delta=-abs(step))
+                case Constant.MQTT_T_VAL_CAMERA_RIGHT:
+                    print("Received command: camera right")
+                    step = int(v) if isinstance(v, int) else 10
+                    af_servo1_step(delta=abs(step))
+                case Constant.MQTT_T_VAL_CAMERA_RESET:
+                    print("Received command: camera reset")
+                    af_servo1_angle(angle=90)
+                    af_servo2_angle(angle=90)
                 case Constant.MQTT_T_VAL_RPI_RESTART:
                     print("Received command: restart Raspberry Pi")
                     device_restart()

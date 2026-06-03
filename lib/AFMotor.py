@@ -20,6 +20,7 @@ immediately crash; GPIO is only required when you construct/use the driver.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 import threading
 from typing import Any, Dict, Optional
 
@@ -66,6 +67,13 @@ class AFMotorShieldV1Pins:
     pwm_m3: int = 6
     pwm_m4: int = 5
 
+    # Servo header signal pins (Servo1=shield D10, Servo2=shield D9 on v1).
+    # These are NOT driven by the shield ICs; they are just connected to the
+    # microcontroller pins. On a Raspberry Pi build, wire those shield header
+    # pins to the BCM GPIO pins you choose and configure them here.
+    servo_1: int | None = None
+    servo_2: int | None = None
+
 
 class AFMotorShieldV1:
     """Controller for Adafruit Motor Shield v1 shift register + PWM lines."""
@@ -91,7 +99,14 @@ class AFMotorShieldV1:
         self._gpio = gpio
         self._latch_state = 0
         self._pwms: Dict[int, Any] = {}
+        self._servo_pwms: Dict[int, Any] = {}
+        self._servo_angles: Dict[int, int] = {}
         self._initialized = False
+
+        # Servo defaults for most hobby servos (SG90/MG90S etc.).
+        self._servo_freq_hz = 50
+        self._servo_min_pulse_us = 500
+        self._servo_max_pulse_us = 2500
 
     def _ensure_initialized(self) -> None:
         if self._initialized:
@@ -100,19 +115,22 @@ class AFMotorShieldV1:
         gpio = self._gpio
         gpio.setmode(gpio.BCM)
 
-        gpio.setup(
-            [
-                self._pins.motorlatch,
-                self._pins.motorclk,
-                self._pins.motorenable,
-                self._pins.motordata,
-                self._pins.pwm_m1,
-                self._pins.pwm_m2,
-                self._pins.pwm_m3,
-                self._pins.pwm_m4,
-            ],
-            gpio.OUT,
-        )
+        output_pins = [
+            self._pins.motorlatch,
+            self._pins.motorclk,
+            self._pins.motorenable,
+            self._pins.motordata,
+            self._pins.pwm_m1,
+            self._pins.pwm_m2,
+            self._pins.pwm_m3,
+            self._pins.pwm_m4,
+        ]
+        if self._pins.servo_1 is not None:
+            output_pins.append(self._pins.servo_1)
+        if self._pins.servo_2 is not None:
+            output_pins.append(self._pins.servo_2)
+
+        gpio.setup(output_pins, gpio.OUT)
 
         # enable outputs (active-low on v1)
         gpio.output(self._pins.motorenable, gpio.LOW)
@@ -124,6 +142,14 @@ class AFMotorShieldV1:
         self._pwms[4] = gpio.PWM(self._pins.pwm_m4, self._pwm_hz)
         for pwm in self._pwms.values():
             pwm.start(0)
+
+        # Servo PWM (if configured)
+        if self._pins.servo_1 is not None:
+            self._servo_pwms[1] = gpio.PWM(self._pins.servo_1, self._servo_freq_hz)
+            self._servo_pwms[1].start(0)
+        if self._pins.servo_2 is not None:
+            self._servo_pwms[2] = gpio.PWM(self._pins.servo_2, self._servo_freq_hz)
+            self._servo_pwms[2].start(0)
 
         # Mark initialized before any method that might call back into init.
         self._initialized = True
@@ -198,8 +224,48 @@ class AFMotorShieldV1:
             except Exception:
                 pass
 
+        for pwm in self._servo_pwms.values():
+            try:
+                pwm.stop()
+            except Exception:
+                pass
+
         self._pwms.clear()
+        self._servo_pwms.clear()
+        self._servo_angles.clear()
         self._initialized = False
+
+    def _servo_angle_to_duty(self, angle: int) -> float:
+        # Clamp typical servo range.
+        a = max(0, min(int(angle), 180))
+        span_us = self._servo_max_pulse_us - self._servo_min_pulse_us
+        pulse_us = self._servo_min_pulse_us + (span_us * (a / 180.0))
+        period_us = 1_000_000.0 / float(self._servo_freq_hz)
+        return float((pulse_us / period_us) * 100.0)
+
+    def servo_set_angle(self, servo_num: int, *, angle: int) -> None:
+        """Set servo angle in degrees (0..180).
+
+        Servo1/Servo2 correspond to the shield servo headers.
+        You must wire the shield servo *signal* pin to the configured BCM GPIO.
+        """
+        self._ensure_initialized()
+        servo_num = int(servo_num)
+        if servo_num not in (1, 2):
+            raise ValueError("servo_num must be 1 or 2")
+        if servo_num not in self._servo_pwms:
+            raise RuntimeError(
+                "Servo pins are not configured. Set AFMotorShieldV1Pins(servo_1=..., servo_2=...) "
+                "or set env vars UGV_SHIELD_SERVO1_GPIO / UGV_SHIELD_SERVO2_GPIO."
+            )
+
+        duty = self._servo_angle_to_duty(angle)
+        self._servo_pwms[servo_num].ChangeDutyCycle(duty)
+        self._servo_angles[servo_num] = max(0, min(int(angle), 180))
+
+    def servo_step(self, servo_num: int, *, delta: int, default_angle: int = 90) -> None:
+        current = self._servo_angles.get(int(servo_num), int(default_angle))
+        self.servo_set_angle(int(servo_num), angle=current + int(delta))
 
 
 class AF_DCMotorV1:
@@ -288,6 +354,23 @@ class UGVMotorDriver:
     def cleanup(self) -> None:
         self._shield.cleanup()
 
+    # Servo helpers (shield Servo1/Servo2 headers)
+    def servo1_angle(self, angle: int) -> None:
+        with self._lock:
+            self._shield.servo_set_angle(1, angle=int(angle))
+
+    def servo2_angle(self, angle: int) -> None:
+        with self._lock:
+            self._shield.servo_set_angle(2, angle=int(angle))
+
+    def servo1_step(self, *, delta: int, default_angle: int = 90) -> None:
+        with self._lock:
+            self._shield.servo_step(1, delta=int(delta), default_angle=int(default_angle))
+
+    def servo2_step(self, *, delta: int, default_angle: int = 90) -> None:
+        with self._lock:
+            self._shield.servo_step(2, delta=int(delta), default_angle=int(default_angle))
+
 
 # Convenience functions (keep your existing main.py call style)
 _default_driver: Optional[UGVMotorDriver] = None
@@ -296,6 +379,9 @@ _default_driver: Optional[UGVMotorDriver] = None
 # Default wiring for this project (BCM numbering).
 # Shield PWM pins: D11->GPIO20, D3->GPIO21, D6->GPIO23, D5->GPIO24
 # Shift-register pins (direction): D12->GPIO12, D4->GPIO4, D7->GPIO7, D8->GPIO8
+_SERVO1_GPIO = os.environ.get("UGV_SHIELD_SERVO1_GPIO")
+_SERVO2_GPIO = os.environ.get("UGV_SHIELD_SERVO2_GPIO")
+
 DEFAULT_PINS = AFMotorShieldV1Pins(
     motorlatch=12,
     motorclk=4,
@@ -305,6 +391,8 @@ DEFAULT_PINS = AFMotorShieldV1Pins(
     pwm_m2=21,
     pwm_m3=23,
     pwm_m4=24,
+    servo_1=int(_SERVO1_GPIO) if _SERVO1_GPIO else None,
+    servo_2=int(_SERVO2_GPIO) if _SERVO2_GPIO else None,
 )
 
 
@@ -335,9 +423,21 @@ def af_motor_turn_right(*, speed: int = 255) -> None:
     _get_default_driver().turn_right(speed=speed)
 
 
-def af_motor_turn_left(*, speed: int = 255) -> None:
-    _get_default_driver().turn_left(speed=speed)
+def af_servo1_angle(*, angle: int) -> None:
+    """Set shield Servo1 angle (0..180)."""
+    _get_default_driver().servo1_angle(angle)
 
 
-def af_motor_turn_right(*, speed: int = 255) -> None:
-    _get_default_driver().turn_right(speed=speed)
+def af_servo2_angle(*, angle: int) -> None:
+    """Set shield Servo2 angle (0..180)."""
+    _get_default_driver().servo2_angle(angle)
+
+
+def af_servo1_step(*, delta: int, default_angle: int = 90) -> None:
+    """Move shield Servo1 by delta degrees (negative/positive)."""
+    _get_default_driver().servo1_step(delta=delta, default_angle=default_angle)
+
+
+def af_servo2_step(*, delta: int, default_angle: int = 90) -> None:
+    """Move shield Servo2 by delta degrees (negative/positive)."""
+    _get_default_driver().servo2_step(delta=delta, default_angle=default_angle)
