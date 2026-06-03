@@ -258,7 +258,7 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
             match t:
                 case Constant.MQTT_T_VAL_FORWARD:
                     print("Received command: move forward")
-                    #af_motor_forward(speed=255)
+                    af_motor_forward(speed=255)
                 case Constant.MQTT_T_VAL_BACKWARD:
                     print("Received command: move backward")
                     #af_motor_backward(speed=255)
