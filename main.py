@@ -264,10 +264,10 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
                     af_motor_backward(speed=255)
                 case Constant.MQTT_T_VAL_LEFT:
                     print("Received command: turn left")
-                    af_motor_turn_left()
+                    af_motor_turn_left(speed=255)
                 case Constant.MQTT_T_VAL_RIGHT:
                     print("Received command: turn right")
-                    af_motor_turn_right()
+                    af_motor_turn_right(speed=255)
                     
                 case Constant.MQTT_T_VAL_STOP:
                     print("Received command: stop")
