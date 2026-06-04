@@ -7,7 +7,7 @@ from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
 from lib.serial_controller import SerialController
-serial_ctrl = SerialController(port="/dev/ttyUSB0", baudrate=9600)
+serial_ctrl = SerialController(port="/dev/ttyACM0", baudrate=9600)
 serial_ctrl.open()
 ##Motor control library for Raspberry Pi (Adafruit Motor Shield compatible)
 from lib.AFMotor import (
