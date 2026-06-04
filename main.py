@@ -111,6 +111,7 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
                 message = message.decode("utf-8", errors="replace")
             print(f"DataChannel message: {message}")
             parsed = try_parse_json_payload(message)
+            print(f"Parsed JSON payload: {parsed}")
             if parsed.ok:
                 if isinstance(parsed.value, dict):
                     print(f"DataChannel JSON object on {channel.label}: {parsed.value}")            
