@@ -109,37 +109,8 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
         def on_message(message):
             if isinstance(message, (bytes, bytearray)):
                 message = message.decode("utf-8", errors="replace")
-            print(f"DataChannel message yes: {message}")
-            #parsed = try_parse_json_payload(message)
-        
-            print(f"Parsed DataChannel message: {getValueByKey(message, 't', None)} {getValueByKey(message, 'v', None)    }")
-            # if parsed.ok:
-            #     if isinstance(parsed.value, dict):
-                               
-            #         t_raw = getValueByKey(parsed.value, 't')
-            #         t = _coerce_int(t_raw)
-            #         v_raw = getValueByKey(parsed.value, 'v')
-            #         v = _coerce_int(v_raw)
-            #         print(f"Value of 't': {t}")
-            #         serial_ctrl.handle_mqtt_command(t, v)
-            #         # match t:
-            #         #     case 1:
-            #         #         print("Received command: move forward")
-            #         #         af_motor_forward(speed=255)
-                                                             
-            #         #     case 2:
-            #         #         print("Received command: move backward")
-            #         #         af_motor_backward(speed=255)
-            #         #     case 0:
-            #         #         print("Received command: stop")
-            #         #         af_motor_stop()
-            #         #     case _:
-            #         #         print("Received command: unknown")
-            #     elif isinstance(parsed.value, list):
-            #         print(f"DataChannel JSON array: {parsed.value}")
-            #     else:
-            #         print(f"DataChannel JSON value: {parsed.value!r}")
-            #     text = parsed.text
+            print(f"DataChannel message: {message}")
+            
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
@@ -206,6 +177,22 @@ async def main(room_id: str):
             if isinstance(message, (bytes, bytearray)):
                 message = message.decode("utf-8", errors="replace")
             print(f"DataChannel message: {message}")
+            parsed = try_parse_json_payload(message)
+            if parsed.ok:
+                if isinstance(parsed.value, dict):
+                               
+                    t_raw = getValueByKey(parsed.value, 't')
+                    t = _coerce_int(t_raw)
+                    v_raw = getValueByKey(parsed.value, 'v')
+                    v = _coerce_int(v_raw)
+                    print(f"Value of 't': {t}")
+                    serial_ctrl.handle_mqtt_command(t, v)
+                    
+                elif isinstance(parsed.value, list):
+                    print(f"DataChannel JSON array: {parsed.value}")
+                else:
+                    print(f"DataChannel JSON value: {parsed.value!r}")
+                text = parsed.text
 
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
