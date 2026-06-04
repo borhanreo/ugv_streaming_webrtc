@@ -6,6 +6,9 @@ from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
+from lib.serial_controller import SerialController
+serial_ctrl = SerialController(port="/dev/ttyUSB0", baudrate=9600)
+serial_ctrl.open()
 ##Motor control library for Raspberry Pi (Adafruit Motor Shield compatible)
 from lib.AFMotor import (
     af_motor_backward,
@@ -314,7 +317,7 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
             v_raw = getValueByKey(parsed.value, 'v', None)
             v = _coerce_int(v_raw)
             print(f"Value of 't': {t}")
-
+            serial_ctrl.handle_mqtt_command(t, v)
             match t:
                 case Constant.MQTT_T_VAL_FORWARD:
                     print("Received command: move forward")
