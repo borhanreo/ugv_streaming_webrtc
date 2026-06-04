@@ -113,31 +113,18 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
             parsed = try_parse_json_payload(message)
             if parsed.ok:
                 if isinstance(parsed.value, dict):
-                               
-                    t_raw = getValueByKey(parsed.value, 't')
+                    print(f"DataChannel JSON object on {channel.label}: {parsed.value}")            
+                    t_raw = getValueByKey(parsed.value, 't', None)
                     t = _coerce_int(t_raw)
-                    print(f"Value of 't': {t}")
                     v_raw = getValueByKey(parsed.value, 'v', None)
                     v = _coerce_int(v_raw)
-                    print(f"Value of 'v': {v}")
+                    print(f"Value of 't': {t}")
                     serial_ctrl.handle_mqtt_command(t, v)
-                    # match t:
-                    #     case 1:
-                    #         print("Received command: move forward")
-                    #         af_motor_forward(speed=255)
-                                                             
-                    #     case 2:
-                    #         print("Received command: move backward")
-                    #         af_motor_backward(speed=255)
-                    #     case 0:
-                    #         print("Received command: stop")
-                    #         af_motor_stop()
-                    #     case _:
-                    #         print("Received command: unknown")
+                    
                 elif isinstance(parsed.value, list):
-                    print(f"DataChannel JSON array: {parsed.value}")
+                    print(f"DataChannel JSON array on {channel.label}: {parsed.value}")
                 else:
-                    print(f"DataChannel JSON value: {parsed.value!r}")
+                    print(f"DataChannel JSON value on {channel.label}: {parsed.value!r}")
                 text = parsed.text
 
     @pc.on("connectionstatechange")
