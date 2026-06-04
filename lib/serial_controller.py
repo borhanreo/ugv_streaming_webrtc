@@ -104,6 +104,17 @@ class SerialController:
         message = f"{motor},{direction},{speed}"
         self.send_raw(message)
 
+    def send_servo_command(self, servo: str, angle: int) -> None:
+        """Send a formatted servo command.
+
+        Args:
+            servo: Servo identifier, e.g. ``"S1"``.
+            angle: Servo target angle 0–180.
+        """
+        angle = max(0, min(180, int(angle)))
+        message = f"{servo},{angle}"
+        self.send_raw(message)
+
     # ------------------------------------------------------------------
     # MQTT value dispatcher
     # ------------------------------------------------------------------
