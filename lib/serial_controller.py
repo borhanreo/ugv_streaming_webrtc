@@ -119,22 +119,47 @@ class SerialController:
             case Constant.MQTT_T_VAL_FORWARD:
                 logger.info("MQTT → Forward")
                 self.send_motor_command("M1", "F", speed)
+                self.send_motor_command("M2", "F", speed)
+                self.send_motor_command("M3", "F", speed)
+                self.send_motor_command("M4", "F", speed)
 
             case Constant.MQTT_T_VAL_BACKWARD:
                 logger.info("MQTT → Backward")
                 self.send_motor_command("M1", "B", speed)
+                self.send_motor_command("M2", "B", speed)
+                self.send_motor_command("M3", "B", speed)
+                self.send_motor_command("M4", "B", speed)
 
             case Constant.MQTT_T_VAL_LEFT:
                 logger.info("MQTT → Left")
-                self.send_motor_command("M1", "L", speed)
+                self.send_motor_command("M1", "R", speed)
+                self.send_motor_command("M2", "R", speed)
+                self.send_motor_command("M3", "F", speed)
+                self.send_motor_command("M4", "F", speed)
 
             case Constant.MQTT_T_VAL_RIGHT:
                 logger.info("MQTT → Right")
-                self.send_motor_command("M1", "R", speed)
+                self.send_motor_command("M1", "F", speed)
+                self.send_motor_command("M2", "F", speed)
+                self.send_motor_command("M3", "R", speed)
+                self.send_motor_command("M4", "R", speed)
 
             case Constant.MQTT_T_VAL_STOP | Constant.MQTT_T_VAL_EMERGENCY_STOP:
                 logger.info("MQTT → Stop")
-                self.send_motor_command("M1", "S", 0)
-
+                self.send_motor_command("M1", "R", 0)
+                self.send_motor_command("M2", "R", 0)
+                self.send_motor_command("M3", "R", 0)
+                self.send_motor_command("M4", "R", 0)
+            case Constant.MQTT_T_VAL_SERVO_ROTATE_TEST:
+                for num in range(0):
+                    self.send_servo_command("S2", num)
+                    print(num)
+                for i in range(0, 181):      # 181 because the stop value is exclusive
+                    print(i)
+                    self.send_servo_command("S2", i)
+                    # Count down from 180 to 0
+                for i in range(180, -1, -1): # step -1 to go backwards
+                        print(i) 
+                        self.send_servo_command("S2", i)   
             case _:
                 logger.debug("MQTT → unhandled command t=%s", t)

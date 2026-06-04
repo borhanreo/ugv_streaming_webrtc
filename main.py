@@ -318,51 +318,51 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
             v = _coerce_int(v_raw)
             print(f"Value of 't': {t}")
             serial_ctrl.handle_mqtt_command(t, v)
-            match t:
-                case Constant.MQTT_T_VAL_FORWARD:
-                    print("Received command: move forward")
-                    af_motor_forward(speed=255)
-                case Constant.MQTT_T_VAL_BACKWARD:
-                    print("Received command: move backward")
-                    af_motor_backward(speed=255)
-                case Constant.MQTT_T_VAL_LEFT:
-                    print("Received command: turn left")
-                    af_motor_turn_left(speed=255)
-                case Constant.MQTT_T_VAL_RIGHT:
-                    print("Received command: turn right")
-                    af_motor_turn_right(speed=255)
+            # match t:
+            #     case Constant.MQTT_T_VAL_FORWARD:
+            #         print("Received command: move forward")
+            #         af_motor_forward(speed=255)
+            #     case Constant.MQTT_T_VAL_BACKWARD:
+            #         print("Received command: move backward")
+            #         af_motor_backward(speed=255)
+            #     case Constant.MQTT_T_VAL_LEFT:
+            #         print("Received command: turn left")
+            #         af_motor_turn_left(speed=255)
+            #     case Constant.MQTT_T_VAL_RIGHT:
+            #         print("Received command: turn right")
+            #         af_motor_turn_right(speed=255)
                     
-                case Constant.MQTT_T_VAL_STOP:
-                    print("Received command: stop")
-                    #af_motor_stop()
-                case Constant.MQTT_T_VAL_CAMERA_UP:
-                    print("Received command: camera up")
-                    step = int(v) if isinstance(v, int) else 10
-                    af_servo2_step(delta=abs(step))
-                case Constant.MQTT_T_VAL_CAMERA_DOWN:
-                    print("Received command: camera down")
-                    step = int(v) if isinstance(v, int) else 10
-                    af_servo2_step(delta=-abs(step))
-                case Constant.MQTT_T_VAL_CAMERA_LEFT:
-                    print("Received command: camera left")
-                    step = int(v) if isinstance(v, int) else 10
-                    af_servo1_step(delta=-abs(step))
-                case Constant.MQTT_T_VAL_CAMERA_RIGHT:
-                    print("Received command: camera right")
-                    step = int(v) if isinstance(v, int) else 10
-                    af_servo1_step(delta=abs(step))
-                case Constant.MQTT_T_VAL_CAMERA_RESET:
-                    print("Received command: camera reset")
-                    af_servo1_angle(angle=90)
-                    af_servo2_angle(angle=90)
-                case Constant.MQTT_T_VAL_RPI_RESTART:
-                    print("Received command: restart Raspberry Pi")
-                    device_restart()
-                case Constant.MQTT_T_VAL_RPI_SHUTDOWN:
-                    print("Received command: shutdown Raspberry Pi")
-                    device_shutdown()
-                case _:
-                    print("Received command: unknown")
+            #     case Constant.MQTT_T_VAL_STOP:
+            #         print("Received command: stop")
+            #         #af_motor_stop()
+            #     case Constant.MQTT_T_VAL_CAMERA_UP:
+            #         print("Received command: camera up")
+            #         step = int(v) if isinstance(v, int) else 10
+            #         af_servo2_step(delta=abs(step))
+            #     case Constant.MQTT_T_VAL_CAMERA_DOWN:
+            #         print("Received command: camera down")
+            #         step = int(v) if isinstance(v, int) else 10
+            #         af_servo2_step(delta=-abs(step))
+            #     case Constant.MQTT_T_VAL_CAMERA_LEFT:
+            #         print("Received command: camera left")
+            #         step = int(v) if isinstance(v, int) else 10
+            #         af_servo1_step(delta=-abs(step))
+            #     case Constant.MQTT_T_VAL_CAMERA_RIGHT:
+            #         print("Received command: camera right")
+            #         step = int(v) if isinstance(v, int) else 10
+            #         af_servo1_step(delta=abs(step))
+            #     case Constant.MQTT_T_VAL_CAMERA_RESET:
+            #         print("Received command: camera reset")
+            #         af_servo1_angle(angle=90)
+            #         af_servo2_angle(angle=90)
+            #     case Constant.MQTT_T_VAL_RPI_RESTART:
+            #         print("Received command: restart Raspberry Pi")
+            #         device_restart()
+            #     case Constant.MQTT_T_VAL_RPI_SHUTDOWN:
+            #         print("Received command: shutdown Raspberry Pi")
+            #         device_shutdown()
+            #     case _:
+            #         print("Received command: unknown")
         elif isinstance(parsed.value, list):
             print(f"MQTT JSON array on {topic}: {parsed.value}")
         else:
