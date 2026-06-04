@@ -166,7 +166,7 @@ class SerialController:
             case Constant.MQTT_T_VAL_SERVO_ROTATE_TEST:
                 for num in range(0):
                     self.send_servo_command("S2", num)
-                    sleep(0.01)  # Optional: add a small delay between commands
+                    sleep(0.1)  # Optional: add a small delay between commands
                     print(num)
                 for i in range(0, 181):      # 181 because the stop value is exclusive
                     print(i)
@@ -175,6 +175,6 @@ class SerialController:
                 for i in range(180, -1, -1): # step -1 to go backwards
                         print(i) 
                         self.send_servo_command("S2", i) 
-                        sleep(0.01)  # Optional: add a small delay between commands
+                        sleep(0.1)  # Optional: add a small delay between commands
             case _:
                 logger.debug("MQTT → unhandled command t=%s", t)
