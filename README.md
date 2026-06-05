@@ -42,7 +42,7 @@
 ### Run without --room-id (default uses MAC)
 ```python3 main.py```
 
-### Run without --room-id but use a random room id (published to MQTT)
+### Run without --room-id but use a random room id (published to MQTT) for
 ```python3 main.py --use-mac-room-id false```
 
 
@@ -106,6 +106,7 @@ WantedBy=multi-user.target
 ```sudo systemctl start acs_ugv.service```
 
 ```sudo systemctl status acs_ugv.service```
+
 
 ```sudo systemctl restart acs_ugv.service```
 
