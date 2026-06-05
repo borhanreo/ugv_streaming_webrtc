@@ -13,7 +13,7 @@ def device_restart() -> None:
 
 	print("Initiating device restart...")
 	try:
-		subprocess.run(["sudo", "-n", "reboot"], check=True)
+		subprocess.run(["/usr/bin/sudo", "reboot"], check=True)
 	except subprocess.CalledProcessError as e:
 		print(f"Error during restart: {e}")
 	except Exception as e:
