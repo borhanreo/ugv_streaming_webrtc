@@ -118,3 +118,4 @@ WantedBy=multi-user.target
 
 # Show recent logs for this boot
 ```journalctl -u acs_ugv.service -b -n 200 --no-pager```
+```sudo journalctl -u acs_ugv.service -f```
