@@ -29,13 +29,19 @@
 ### mqtt install
 ```pip install paho-mqtt```
 
-## RPI GPIO
+### RPI GPIO
 ```pip install RPi.GPIO```
+
+### install pyserial
+```pip install pyserial```
+
 
 ### add firebase json
 ```/home/pi/serviceAccountKey.json```
 
-
+### need to add credential in config.py
+```nano lib/config.py```
+add here mqtt usr,pass and host, port
 ### Run python 
 ```python3 main.py --room-id borhan12```
 
