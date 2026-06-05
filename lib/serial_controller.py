@@ -168,9 +168,11 @@ class SerialController:
                 self.send_servo_command("S2", speed) 
             case Constant.MQTT_T_VAL_RPI_RESTART:
                 logger.info("MQTT → RPi Restart")
-                #device_restart()
+                print("MQTT command received: Restarting device...")
+                device_restart()
             case Constant.MQTT_T_VAL_RPI_SHUTDOWN:
                 logger.info("MQTT → RPi Shutdown")
-                #device_shutdown()
+                print("MQTT command received: Shutting down device...")
+                device_shutdown()
             case _:
                 logger.debug("MQTT → unhandled command t=%s", t)
