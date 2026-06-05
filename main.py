@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import uuid
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -100,6 +101,26 @@ def _create_peer_connection() -> RTCPeerConnection:
     return RTCPeerConnection(configuration=RTCConfiguration(iceServers=DEFAULT_ICE_SERVERS))
 
 
+def _forward_control_to_serial_and_mqtt(message) -> None:
+    if isinstance(message, (bytes, bytearray)):
+        message = message.decode("utf-8", errors="replace")
+
+    print(f"DataChannel message: {message}")
+    parsed = try_parse_json_payload(message)
+    if not parsed.ok or not isinstance(parsed.value, dict):
+        return
+
+    t_raw = getValueByKey(parsed.value, 't', None)
+    t = _coerce_int(t_raw)
+    v_raw = getValueByKey(parsed.value, 'v', None)
+    v = _coerce_int(v_raw)
+    print(f"Value of 't': {t}")
+    serial_ctrl.handle_mqtt_command(t, v)
+
+    if _mqtt_client is not None and MQTT_PUBLISH_TOPIC:
+        _mqtt_client.publish(MQTT_PUBLISH_TOPIC, json.dumps({"t": t, "v": v}))
+
+
 def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_collection: str):
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -107,9 +128,7 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
 
         @channel.on("message")
         def on_message(message):
-            if isinstance(message, (bytes, bytearray)):
-                message = message.decode("utf-8", errors="replace")
-            print(f"DataChannel message: {message}")
+            _forward_control_to_serial_and_mqtt(message)
             
 
     @pc.on("connectionstatechange")
@@ -174,25 +193,7 @@ async def main(room_id: str):
 
         @channel.on("message")
         def on_message(message):
-            if isinstance(message, (bytes, bytearray)):
-                message = message.decode("utf-8", errors="replace")
-            print(f"DataChannel message: {message}")
-            parsed = try_parse_json_payload(message)
-            if parsed.ok:
-                if isinstance(parsed.value, dict):
-                               
-                    t_raw = getValueByKey(parsed.value, 't')
-                    t = _coerce_int(t_raw)
-                    v_raw = getValueByKey(parsed.value, 'v')
-                    v = _coerce_int(v_raw)
-                    print(f"Value of 't': {t}")
-                    serial_ctrl.handle_mqtt_command(t, v)
-                    
-                elif isinstance(parsed.value, list):
-                    print(f"DataChannel JSON array: {parsed.value}")
-                else:
-                    print(f"DataChannel JSON value: {parsed.value!r}")
-                text = parsed.text
+            _forward_control_to_serial_and_mqtt(message)
 
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)

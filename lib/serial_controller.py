@@ -21,6 +21,7 @@ from typing import Optional
 import serial  # pyserial
 
 from lib import Constant
+import main
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +167,8 @@ class SerialController:
             case Constant.MQTT_T_VAL_SERVO_ROTATE_TEST:
                 logger.info("MQTT → Servo Rotate Test")
                 self.send_servo_command("S2", speed) 
-                   
+            case Constant.MQTT_T_VAL_RPI_RESTART:
+                logger.info("MQTT → RPi Restart")
+                main.restart_device()
             case _:
                 logger.debug("MQTT → unhandled command t=%s", t)
