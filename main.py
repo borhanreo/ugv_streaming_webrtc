@@ -308,41 +308,41 @@ async def main(room_id: str):
 
 
     # 🔹 4. Grab webcam video
-    #player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format":"mjpeg", "framerate": "8"})
-    # player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format": "yuyv422", "framerate": "10"})
-    # pc.addTrack(player.video)
+    player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format":"mjpeg", "framerate": "8"})
+    player = MediaPlayer("/dev/video0", format="v4l2", options={"video_size": "320x240","input_format": "yuyv422", "framerate": "10"})
+    pc.addTrack(player.video)
 
-    # player = MediaPlayer("/dev/video0", format="v4l2", options={"framerate": "10"})
-    # scaled = ResizedVideoTrack(player.video, 320, 240)
-    # pc.addTrack(scaled)
-    # _log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=4)
+    player = MediaPlayer("/dev/video0", format="v4l2", options={"framerate": "10"})
+    scaled = ResizedVideoTrack(player.video, 320, 240)
+    pc.addTrack(scaled)
+    _log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=4)
     # Use MJPEG input so camera handles compression
-    player = MediaPlayer(
-        "/dev/video0",
-        format="v4l2",
-        options={
-            "framerate": "10",          # same as before
-            "video_size": "320x240",    # do scaling in camera, not software
-            "input_format": "mjpeg"     # key optimization!
-        }
-    )
+    # player = MediaPlayer(
+    #     "/dev/video0",
+    #     format="v4l2",
+    #     options={
+    #         "framerate": "10",          # same as before
+    #         "video_size": "320x240",    # do scaling in camera, not software
+    #         "input_format": "mjpeg"     # key optimization!
+    #     }
+    # )
 
-    # Add the player track directly (no extra ResizedVideoTrack, less CPU)
-    # Add track the normal way
-    video_track = player.video
-    pc.addTrack(video_track)
+    # # Add the player track directly (no extra ResizedVideoTrack, less CPU)
+    # # Add track the normal way
+    # video_track = player.video
+    # pc.addTrack(video_track)
 
-    # Get the first video transceiver and set codec preferences
-    # (You can access transceivers list after adding a track)
-    for transceiver in pc.getTransceivers():
-        if transceiver.kind == "video":
-            # Prefer H.264 (clockRate = 90000)
-            transceiver.setCodecPreferences([
-                RTCRtpCodecCapability(mimeType="video/H264", clockRate=90000)
-            ])
-            break
+    # # Get the first video transceiver and set codec preferences
+    # # (You can access transceivers list after adding a track)
+    # for transceiver in pc.getTransceivers():
+    #     if transceiver.kind == "video":
+    #         # Prefer H.264 (clockRate = 90000)
+    #         transceiver.setCodecPreferences([
+    #             RTCRtpCodecCapability(mimeType="video/H264", clockRate=90000)
+    #         ])
+    #         break
 
-    _log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=10)
+    # _log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=10)
 
     
     try:
