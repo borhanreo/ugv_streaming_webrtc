@@ -119,3 +119,21 @@ WantedBy=multi-user.target
 # Show recent logs for this boot
 ```journalctl -u acs_ugv.service -b -n 200 --no-pager```
 ```sudo journalctl -u acs_ugv.service -f```
+
+## WebRTC event logging
+
+The Python streamer writes detailed event logs for:
+- peer connect, disconnect, reconnect
+- signaling state changes
+- ICE gathering and ICE connection changes
+- local and remote ICE candidate events
+- DataChannel lifecycle (created/open/close/error/message)
+- track lifecycle and periodic heartbeat
+
+### Run with log options
+
+```python3 main.py --room-id borhan12 --log-file /home/pi/webrtc_events.log --log-level INFO```
+
+### Follow log output in real-time
+
+```tail -f /home/pi/webrtc_events.log```
