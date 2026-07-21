@@ -137,3 +137,80 @@ The Python streamer writes detailed event logs for:
 ### Follow log output in real-time
 
 ```tail -f /home/pi/webrtc_events.log```
+
+
+#### If Any 'dev/Video' related error 
+
+```sudo apt update```
+```sudo apt install -y ffmpeg libavcodec-extra```
+
+
+### 2 | Install FFmpeg With H.264 Support
+Raspberry Pi OS Bookworm/Bullseye usually ships a minimal FFmpeg without libx264.
+Install the “extra” build:
+```bash
+sudo apt update
+sudo apt install -y ffmpeg libavcodec-extra
+```
+Now confirm again:
+
+```bash
+ffmpeg -codecs | grep 264
+```
+You should see at least one encoder line (DEV.LS … h264).
+
+### 🧩 3 | Relink aiortc to the Updated Libraries
+aiortc loads codec capabilities from the FFmpeg libraries present at install time,
+so reinstall it after updating FFmpeg:
+
+```bash
+source ~/webrtc-env/bin/activate```
+pip install --force-reinstall aiortc```
+```
+### 🔍 4 | Confirm aiortc Sees H.264
+Within your virtual environment, open Python and run:
+
+bash
+#!/bin/bash
+# Script 3: Simple system backup function python
+```from aiortc import RTCRtpSender```
+```caps = RTCRtpSender.getCapabilities("video")```
+```for c in caps.codecs:```
+    ```print(c.mimeType, c.clockRate, c.name)```
+
+Expected good output:
+```bash
+video/VP8 90000 VP8
+video/H264 90000 H264
+```
+...
+If you now see "video/H264", you’re done 🎉 — the earlier ValueError won’t reappear.
+
+### 🧠 5 | If H.264 Still Missing
+That means your distribution’s FFmpeg still lacks libx264.
+
+Two alternatives:
+
+Use hardware H.264 encoder (v4l2m2m)
+
+```bash
+sudo apt install -y v4l2loopback-utils
+Enable camera acceleration in /boot/firmware/config.txt (or /boot/config.txt):
+```
+
+Copy
+```bash
+start_x=1
+gpu_mem=128
+```
+Reboot, reinstall aiortc again.
+Stay with VP8 (stable fallback)
+Just remove setCodecPreferences() and stick to MJPEG → VP8 capture:
+
+python
+```bash
+player = MediaPlayer("/dev/video0", format="v4l2",
+                     options={"input_format":"mjpeg", "framerate":"10", "video_size":"320x240"})
+pc.addTrack(player.video)
+```
+This works reliably even without H.264 support.
