@@ -214,3 +214,41 @@ player = MediaPlayer("/dev/video0", format="v4l2",
 pc.addTrack(player.video)
 ```
 This works reliably even without H.264 support.
+
+## ⚙️ 1 | Correct H.264 Configuration
+Here’s a clean, minimal snippet that matches your current environment:
+
+```bash
+from aiortc import RTCRtpCodecCapability
+from aiortc.contrib.media import MediaPlayer
+
+# Configure camera source
+player = MediaPlayer(
+    "/dev/video0",
+    format="v4l2",
+    options={
+        "video_size": "320x240",
+        "framerate": "10",
+        "input_format": "mjpeg"  # camera handles compression
+    }
+)
+
+# Add your track
+video_track = player.video
+pc.addTrack(video_track)
+
+# Prefer H.264
+for transceiver in pc.getTransceivers():
+    if transceiver.kind == "video":
+        h264_caps = [
+            c for c in
+            transceiver.sender.getCapabilities("video").codecs
+            if "H264" in c.mimeType
+        ]
+        if h264_caps:
+            transceiver.setCodecPreferences(h264_caps)
+        break
+
+_log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=10)
+
+```
