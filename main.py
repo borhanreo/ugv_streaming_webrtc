@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import logging
+import subprocess
 import uuid
 from datetime import datetime, timezone
 import firebase_admin
@@ -48,6 +49,8 @@ from aiortc import (
 
 _effective_room_id: str | None = None
 LOGGER = logging.getLogger("ugv_webrtc")
+_cpu_last_total: int | None = None
+_cpu_last_idle: int | None = None
 
 
 def _utc_ts() -> str:
@@ -74,6 +77,95 @@ def _setup_logging(log_file: str, log_level: str) -> None:
         format="%(asctime)s %(levelname)s %(message)s",
         handlers=handlers,
     )
+
+
+def _run_cmd_text(command: list[str]) -> str | None:
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+    except Exception:
+        return None
+
+
+def _read_cpu_stat() -> tuple[int, int] | None:
+    try:
+        with open("/proc/stat", "r", encoding="utf-8") as f:
+            first = f.readline().strip()
+        if not first.startswith("cpu "):
+            return None
+        parts = first.split()[1:]
+        values = [int(x) for x in parts]
+        total = sum(values)
+        idle = values[3] + (values[4] if len(values) > 4 else 0)
+        return total, idle
+    except Exception:
+        return None
+
+
+def _get_cpu_usage_percent() -> float | None:
+    global _cpu_last_total, _cpu_last_idle
+
+    sample = _read_cpu_stat()
+    if sample is None:
+        return None
+
+    total, idle = sample
+    if _cpu_last_total is None or _cpu_last_idle is None:
+        _cpu_last_total, _cpu_last_idle = total, idle
+        return None
+
+    dt = total - _cpu_last_total
+    di = idle - _cpu_last_idle
+    _cpu_last_total, _cpu_last_idle = total, idle
+    if dt <= 0:
+        return None
+
+    usage = 100.0 * (1.0 - (di / dt))
+    return round(usage, 2)
+
+
+def _get_ram_usage_percent() -> float | None:
+    try:
+        mem = {}
+        with open("/proc/meminfo", "r", encoding="utf-8") as f:
+            for line in f:
+                if ":" not in line:
+                    continue
+                key, rest = line.split(":", 1)
+                value = int(rest.strip().split()[0])
+                mem[key] = value
+
+        total = mem.get("MemTotal")
+        available = mem.get("MemAvailable")
+        if not total or available is None or total <= 0:
+            return None
+
+        used = total - available
+        return round((used / total) * 100.0, 2)
+    except Exception:
+        return None
+
+
+def _parse_vcgencmd_kv(output: str | None) -> str | None:
+    if not output:
+        return None
+    if "=" not in output:
+        return output
+    return output.split("=", 1)[1].strip()
+
+
+def _get_pi_health_snapshot() -> dict:
+    temp_out = _run_cmd_text(["vcgencmd", "measure_temp"])
+    throttled_out = _run_cmd_text(["vcgencmd", "get_throttled"])
+
+    return {
+        "pi_temp": _parse_vcgencmd_kv(temp_out),
+        "pi_throttled": _parse_vcgencmd_kv(throttled_out),
+        "cpu_usage_percent": _get_cpu_usage_percent(),
+        "ram_usage_percent": _get_ram_usage_percent(),
+    }
 
 
 def _get_firestore_client():
@@ -267,6 +359,7 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
 
 async def _webrtc_heartbeat(pc: RTCPeerConnection, *, room_id: str, stats: dict, interval_s: int = 10):
     while True:
+        health = _get_pi_health_snapshot()
         _log_event(
             "webrtc_heartbeat",
             room_id=room_id,
@@ -277,6 +370,10 @@ async def _webrtc_heartbeat(pc: RTCPeerConnection, *, room_id: str, stats: dict,
             local_candidates=stats.get("local_candidate_count", 0),
             remote_candidates=stats.get("remote_candidate_count", 0),
             reconnect_count=stats.get("reconnect_count", 0),
+            pi_temp=health.get("pi_temp"),
+            pi_throttled=health.get("pi_throttled"),
+            cpu_usage_percent=health.get("cpu_usage_percent"),
+            ram_usage_percent=health.get("ram_usage_percent"),
         )
         await asyncio.sleep(interval_s)
 
