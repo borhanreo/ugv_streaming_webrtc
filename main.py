@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import logging
+import os
 import subprocess
 import uuid
 from datetime import datetime, timezone
@@ -156,13 +157,89 @@ def _parse_vcgencmd_kv(output: str | None) -> str | None:
     return output.split("=", 1)[1].strip()
 
 
+def _parse_vcgencmd_volts(output: str | None) -> float | None:
+    # Example: "volt=0.8637V"
+    value = _parse_vcgencmd_kv(output)
+    if not value:
+        return None
+    try:
+        return float(value.rstrip("Vv"))
+    except Exception:
+        return None
+
+
+def _get_vcgencmd_voltage(domain: str = "") -> float | None:
+    command = ["vcgencmd", "measure_volts"]
+    if domain:
+        command.append(domain)
+    return _parse_vcgencmd_volts(_run_cmd_text(command))
+
+
+def _read_power_supply_metric(metric_file: str) -> tuple[str, int] | None:
+    base = "/sys/class/power_supply"
+    try:
+        if not os.path.isdir(base):
+            return None
+        for name in os.listdir(base):
+            path = os.path.join(base, name, metric_file)
+            if not os.path.isfile(path):
+                continue
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    raw = f.read().strip()
+                value = int(raw)
+                return name, value
+            except Exception:
+                continue
+    except Exception:
+        return None
+    return None
+
+
+def _get_power_supply_snapshot() -> dict:
+    current = _read_power_supply_metric("current_now")
+    voltage = _read_power_supply_metric("voltage_now")
+
+    source_name = None
+    current_a = None
+    voltage_v = None
+    power_w = None
+
+    if current:
+        source_name = current[0]
+        # power_supply current_now is usually in microamps.
+        current_a = round(current[1] / 1_000_000.0, 3)
+
+    if voltage:
+        source_name = source_name or voltage[0]
+        # power_supply voltage_now is usually in microvolts.
+        voltage_v = round(voltage[1] / 1_000_000.0, 3)
+
+    if current_a is not None and voltage_v is not None:
+        power_w = round(current_a * voltage_v, 3)
+
+    return {
+        "power_source": source_name,
+        "supply_voltage_v": voltage_v,
+        "supply_current_a": current_a,
+        "supply_power_w": power_w,
+    }
+
+
 def _get_pi_health_snapshot() -> dict:
     temp_out = _run_cmd_text(["vcgencmd", "measure_temp"])
     throttled_out = _run_cmd_text(["vcgencmd", "get_throttled"])
+    ps = _get_power_supply_snapshot()
 
     return {
         "pi_temp": _parse_vcgencmd_kv(temp_out),
         "pi_throttled": _parse_vcgencmd_kv(throttled_out),
+        "pi_core_voltage_v": _get_vcgencmd_voltage("core"),
+        "pi_arm_voltage_v": _get_vcgencmd_voltage("arm"),
+        "power_source": ps.get("power_source"),
+        "supply_voltage_v": ps.get("supply_voltage_v"),
+        "supply_current_a": ps.get("supply_current_a"),
+        "supply_power_w": ps.get("supply_power_w"),
         "cpu_usage_percent": _get_cpu_usage_percent(),
         "ram_usage_percent": _get_ram_usage_percent(),
     }
@@ -268,11 +345,23 @@ def _install_datachannel_handlers(channel, source: str):
         _forward_control_to_serial_and_mqtt(message)
 
 
+def _send_telemetry_over_datachannel(channel, payload: dict) -> None:
+    try:
+        if channel is None:
+            return
+        if getattr(channel, "readyState", None) != "open":
+            return
+        channel.send(json.dumps(payload, ensure_ascii=True, default=str))
+    except Exception as e:
+        _log_event("datachannel_telemetry_send_error", error=str(e))
+
+
 def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_collection: str):
     stats = {
         "local_candidate_count": 0,
         "remote_candidate_count": 0,
         "reconnect_count": 0,
+        "telemetry_channel": None,
     }
     state = {
         "connection": None,
@@ -285,6 +374,7 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
     @pc.on("datachannel")
     def on_datachannel(channel):
         _log_event("datachannel_received", label=getattr(channel, "label", "unknown"))
+        stats["telemetry_channel"] = channel
         _install_datachannel_handlers(channel, source="remote")
 
     @pc.on("track")
@@ -360,6 +450,24 @@ def _install_peer_handlers(pc: RTCPeerConnection, *, room_ref, local_candidates_
 async def _webrtc_heartbeat(pc: RTCPeerConnection, *, room_id: str, stats: dict, interval_s: int = 10):
     while True:
         health = _get_pi_health_snapshot()
+        telemetry_payload = {
+            "event": "pi_telemetry",
+            "ts": _utc_ts(),
+            "room_id": room_id,
+            "pi_temp": health.get("pi_temp"),
+            "pi_throttled": health.get("pi_throttled"),
+            "pi_core_voltage_v": health.get("pi_core_voltage_v"),
+            "pi_arm_voltage_v": health.get("pi_arm_voltage_v"),
+            "power_source": health.get("power_source"),
+            "supply_voltage_v": health.get("supply_voltage_v"),
+            "supply_current_a": health.get("supply_current_a"),
+            "supply_power_w": health.get("supply_power_w"),
+            "cpu_usage_percent": health.get("cpu_usage_percent"),
+            "ram_usage_percent": health.get("ram_usage_percent"),
+        }
+
+        _send_telemetry_over_datachannel(stats.get("telemetry_channel"), telemetry_payload)
+
         _log_event(
             "webrtc_heartbeat",
             room_id=room_id,
@@ -372,6 +480,12 @@ async def _webrtc_heartbeat(pc: RTCPeerConnection, *, room_id: str, stats: dict,
             reconnect_count=stats.get("reconnect_count", 0),
             pi_temp=health.get("pi_temp"),
             pi_throttled=health.get("pi_throttled"),
+            pi_core_voltage_v=health.get("pi_core_voltage_v"),
+            pi_arm_voltage_v=health.get("pi_arm_voltage_v"),
+            power_source=health.get("power_source"),
+            supply_voltage_v=health.get("supply_voltage_v"),
+            supply_current_a=health.get("supply_current_a"),
+            supply_power_w=health.get("supply_power_w"),
             cpu_usage_percent=health.get("cpu_usage_percent"),
             ram_usage_percent=health.get("ram_usage_percent"),
         )
@@ -469,6 +583,7 @@ async def main(room_id: str):
 
             # Caller creates the DataChannel.
             channel = pc.createDataChannel("chat")
+            stats["telemetry_channel"] = channel
             _install_datachannel_handlers(channel, source="local")
 
             offer = await pc.createOffer()
