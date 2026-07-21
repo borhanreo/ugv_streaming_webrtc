@@ -328,14 +328,19 @@ async def main(room_id: str):
     )
 
     # Add the player track directly (no extra ResizedVideoTrack, less CPU)
-    pc.addTrack(player.video)
+    # Add track the normal way
+    video_track = player.video
+    pc.addTrack(video_track)
 
-    # Prefer hardware H.264 instead of CPU‑bound VP8
-    pc.addTransceiver(
-        "video",
-        direction="sendonly",
-        codec=RTCRtpCodecCapability(mimeType="video/H264", clockRate=90000)
-    )
+    # Get the first video transceiver and set codec preferences
+    # (You can access transceivers list after adding a track)
+    for transceiver in pc.getTransceivers():
+        if transceiver.kind == "video":
+            # Prefer H.264 (clockRate = 90000)
+            transceiver.setCodecPreferences([
+                RTCRtpCodecCapability(mimeType="video/H264", clockRate=90000)
+            ])
+            break
 
     _log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=10)
 
