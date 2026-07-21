@@ -139,12 +139,12 @@ The Python streamer writes detailed event logs for:
 ```tail -f /home/pi/webrtc_events.log```
 
 
-#### If Any 'dev/Video' related error 
+# If Any 'dev/Video' related error 
 
 ```sudo apt update```
 ```sudo apt install -y ffmpeg libavcodec-extra```
 
-
+I fany problem with video
 ### 2 | Install FFmpeg With H.264 Support
 Raspberry Pi OS Bookworm/Bullseye usually ships a minimal FFmpeg without libx264.
 Install the “extra” build:
