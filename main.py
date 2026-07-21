@@ -334,7 +334,7 @@ async def main(room_id: str):
     pc.addTransceiver(
         "video",
         direction="sendonly",
-        codec=RTCRtpCodecCapability(mimeType="video/H264")
+        codec=RTCRtpCodecCapability(mimeType="video/H264", clockRate=90000)
     )
 
     _log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=10)
