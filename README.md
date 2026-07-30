@@ -38,6 +38,8 @@
 
 ### add firebase json
 ```/home/pi/serviceAccountKey.json```
+### location
+google drive robot/rescue
 
 ### need to add credential in config.py
 ```nano lib/config.py```

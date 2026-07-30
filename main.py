@@ -255,7 +255,12 @@ def _get_firestore_client():
 _mqtt_client: MqttClient | None = None
 
 DEFAULT_ICE_SERVERS = [
-    RTCIceServer(urls=["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"])
+    RTCIceServer(urls=["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"]),
+    RTCIceServer(
+        urls=["turn:103.197.206.61:3478?transport=udp", "turn:103.197.206.61:3478?transport=tcp"],
+        username="turnuser",
+        credential="Aa12341!!"
+    )
 ]
 
 
