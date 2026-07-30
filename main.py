@@ -259,10 +259,9 @@ DEFAULT_ICE_SERVERS = [
     RTCIceServer(
         urls=["turn:103.197.206.61:3478?transport=udp", "turn:103.197.206.61:3478?transport=tcp"],
         username="turnuser",
-        credential="Aa12341!"
+        credential="Aa12341!" ##password
     )
 ]
-
 
 def _coerce_int(value):
     if value is None:
