@@ -92,6 +92,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
+Environment=UGV_SUDO_PASSWORD=1234
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/ugv/ugv_streaming_webrtc
