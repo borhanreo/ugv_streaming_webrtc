@@ -21,7 +21,7 @@ from typing import Optional
 import serial  # pyserial
 
 from lib import Constant
-from lib.DeviceOperation import device_restart, device_shutdown
+from lib.DeviceOperation import device_restart, device_service_restart, device_shutdown
 logger = logging.getLogger(__name__)
 
 
@@ -178,6 +178,6 @@ class SerialController:
                 logger.info("MQTT → EXT_3 command received")
                 # Implement the action for EXT_3 here
                 # For example, you could send a specific command to the Arduino
-                
+                device_service_restart("acs_ugv.service")  # Example action: restart a service
             case _:
                 logger.debug("MQTT → unhandled command t=%s", t)
