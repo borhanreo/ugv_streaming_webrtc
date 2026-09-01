@@ -64,3 +64,26 @@ def device_shutdown(*, delay_seconds: int = 0, message: str | None = None) -> No
         print(f"Error during shutdown: {e}")
     except Exception as e:
         print(f"Unexpected error during shutdown: {e}")
+
+
+def device_service_restart(service_name: str = "acs_ugv.service") -> None:
+    """Restart a systemd service (e.g. the UGV app service) via `systemctl restart`.
+
+    Notes:
+    - Requires passwordless sudo configured for `systemctl restart <service_name>`,
+      since this is typically invoked from a non-interactive context (no TTY).
+    - Unlike `device_restart`, this only restarts the given service, not the whole device.
+    """
+
+    import shutil
+    import subprocess
+
+    systemctl_cmd = shutil.which("systemctl") or "/usr/bin/systemctl"
+
+    print(f"Initiating restart of service '{service_name}'...")
+    try:
+        subprocess.run(["sudo", systemctl_cmd, "restart", service_name], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during service restart: {e}")
+    except Exception as e:
+        print(f"Unexpected error during service restart: {e}")

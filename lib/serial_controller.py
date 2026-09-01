@@ -174,5 +174,10 @@ class SerialController:
                 logger.info("MQTT → RPi Shutdown")
                 print("MQTT command received: Shutting down device...")
                 device_shutdown()
+            case Constant.MQTT_T_VAL_EXT_3:
+                logger.info("MQTT → EXT_3 command received")
+                # Implement the action for EXT_3 here
+                # For example, you could send a specific command to the Arduino
+                
             case _:
                 logger.debug("MQTT → unhandled command t=%s", t)
