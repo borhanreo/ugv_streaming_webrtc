@@ -738,31 +738,11 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
 
 def _on_mqtt_connect(rc: int) -> None:
     print(f"MQTT connected (rc={rc})")
-    if rc != 0:
-        _log_event("mqtt_connect_failed", rc=rc)
-        return
-
-    if _mqtt_client is None:
-        _log_event("mqtt_connect_ack_skipped", reason="mqtt_client_unavailable")
-        return
-
     room_part = f" room {_effective_room_id}" if _effective_room_id else ""
-    telemetry_topic = MQTT_PUBLISH_TOPIC
-    acknowledgement = {
-        "event": "mqtt_connection_ack",
-        "status": "connected",
-        "ts": _utc_ts(),
-        "device_mac": DEVICE_MAC,
-        "device_ip": DEVICE_IP,
-        "room_id": _effective_room_id,
-        "rc": rc,
-    }
     _mqtt_client.publish(
-        telemetry_topic,
-        json.dumps(acknowledgement, ensure_ascii=True),
+        MQTT_PUBLISH_TOPIC,
+        f"UGV {DEVICE_MAC}{room_part} ip {DEVICE_IP} connected with rc={rc}",
     )
-    _log_event("mqtt_connection_ack_published", topic=telemetry_topic, **acknowledgement)
-    print(f"UGV {DEVICE_MAC}{room_part} ip {DEVICE_IP} connected with rc={rc}")
 
 
 
