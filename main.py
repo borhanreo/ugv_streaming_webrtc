@@ -47,6 +47,7 @@ from aiortc import (
     RTCPeerConnection,
     RTCSessionDescription,
 )
+from aiortc.sdp import candidate_from_sdp, candidate_to_sdp
 
 _effective_room_id: str | None = None
 LOGGER = logging.getLogger("ugv_webrtc")
@@ -289,18 +290,17 @@ def _coerce_int(value):
 def _candidate_to_firestore(candidate: RTCIceCandidate):
     # Mirrors browser's event.candidate.toJSON() shape.
     return {
-        "candidate": candidate.candidate,
+        "candidate": candidate_to_sdp(candidate),
         "sdpMid": candidate.sdpMid,
         "sdpMLineIndex": candidate.sdpMLineIndex,
     }
 
 
-def _candidate_from_firestore(data):
-    return RTCIceCandidate(
-        candidate=data["candidate"],
-        sdpMid=data.get("sdpMid"),
-        sdpMLineIndex=data.get("sdpMLineIndex"),
-    )
+def _candidate_from_firestore(data) -> RTCIceCandidate:
+    candidate = candidate_from_sdp(data["candidate"])
+    candidate.sdpMid = data.get("sdpMid")
+    candidate.sdpMLineIndex = data.get("sdpMLineIndex")
+    return candidate
 
 
 def _create_peer_connection() -> RTCPeerConnection:

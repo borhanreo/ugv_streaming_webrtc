@@ -140,6 +140,20 @@ The Python streamer writes detailed event logs for:
 
 ```tail -f /home/pi/webrtc_events.log```
 
+### Cross-network streaming diagnosis
+
+The Pi must receive the browser's trickle ICE candidates. `main.py` converts the
+browser's `RTCIceCandidate.toJSON()` SDP string with aiortc's SDP parser before
+adding it to the peer connection. If `webrtc_events.log` reports
+`remote_ice_candidate_error`, the browser and Pi are not using the same Firestore
+room or a candidate document is malformed.
+
+For different networks, a TURN relay is normally required when NAT/firewall rules
+prevent a direct peer-to-peer path. Confirm that the configured TURN server is
+reachable from both the Pi and phone, permits authenticated allocations, and allows
+UDP and TCP 3478 plus its configured relay UDP port range. In the Pi event log,
+look for `ice_connection_state_change` reaching `connected` or `completed`; a
+transition to `failed` means ICE/TURN connectivity failed, not camera capture.
 
 # If Any 'dev/Video' related error 
 
