@@ -10,7 +10,7 @@ import os
 #   Environment=UGV_SUDO_PASSWORD=your-password-here
 # or better, EnvironmentFile=/etc/ugv/sudo.env (a file with 600 permissions, not
 # committed to source control). Never hardcode the password in this file.
-_SUDO_PASSWORD_ENV = "UGV_SUDO_PASSWORD"
+_SUDO_PASSWORD_ENV = "UGV_SUDO_PASSWORD" 
 
 
 def _run_with_sudo(command: list[str], *, check: bool = True):
