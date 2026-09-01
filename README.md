@@ -143,8 +143,9 @@ The Python streamer writes detailed event logs for:
 ### Cross-network streaming diagnosis
 
 The Pi must receive the browser's trickle ICE candidates. `main.py` converts the
-browser's `RTCIceCandidate.toJSON()` SDP string with aiortc's SDP parser before
-adding it to the peer connection. If `webrtc_events.log` reports
+browser's `RTCIceCandidate.toJSON()` SDP string (which starts with `candidate:`)
+to aiortc's SDP format before adding it to the peer connection, and restores that
+prefix when it sends a Pi candidate to the browser. If `webrtc_events.log` reports
 `remote_ice_candidate_error`, the browser and Pi are not using the same Firestore
 room or a candidate document is malformed.
 

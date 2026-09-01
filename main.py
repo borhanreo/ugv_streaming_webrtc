@@ -290,14 +290,17 @@ def _coerce_int(value):
 def _candidate_to_firestore(candidate: RTCIceCandidate):
     # Mirrors browser's event.candidate.toJSON() shape.
     return {
-        "candidate": candidate_to_sdp(candidate),
+        "candidate": f"candidate:{candidate_to_sdp(candidate)}",
         "sdpMid": candidate.sdpMid,
         "sdpMLineIndex": candidate.sdpMLineIndex,
     }
 
 
 def _candidate_from_firestore(data) -> RTCIceCandidate:
-    candidate = candidate_from_sdp(data["candidate"])
+    candidate_sdp = data["candidate"]
+    if candidate_sdp.startswith("candidate:"):
+        candidate_sdp = candidate_sdp[len("candidate:"):]
+    candidate = candidate_from_sdp(candidate_sdp)
     candidate.sdpMid = data.get("sdpMid")
     candidate.sdpMLineIndex = data.get("sdpMLineIndex")
     return candidate
