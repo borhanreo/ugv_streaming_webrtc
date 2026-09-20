@@ -145,13 +145,13 @@ class SerialController:
             case Constant.MQTT_T_VAL_LEFT:
                 logger.info("MQTT → Left")
                 self.send_motor_command("M1", "B", speed)
-                self.send_motor_command("M2", "B", speed)
+                self.send_motor_command("M2", "F", speed)
                 self.send_motor_command("M3", "F", speed)
                 self.send_motor_command("M4", "F", speed)
 
             case Constant.MQTT_T_VAL_RIGHT:
                 logger.info("MQTT → Right")
-                self.send_motor_command("M1", "F", speed)
+                self.send_motor_command("M1", "B", speed)
                 self.send_motor_command("M2", "F", speed)
                 self.send_motor_command("M3", "B", speed)
                 self.send_motor_command("M4", "B", speed)
