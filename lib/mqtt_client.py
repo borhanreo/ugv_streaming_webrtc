@@ -62,6 +62,7 @@ class MqttClient:
 
         def _on_message(client: mqtt.Client, userdata, msg: mqtt.MQTTMessage):
             on_message(msg.topic, msg.payload)
+            print(f"MQTT message received on topic {msg.topic}: {msg.payload}")
 
         client.on_connect = _on_connect
         client.on_disconnect = _on_disconnect

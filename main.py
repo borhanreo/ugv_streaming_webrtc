@@ -669,6 +669,7 @@ async def main(room_id: str):
 
 def _on_mqtt_message(topic: str, payload: bytes) -> None:
     parsed = try_parse_json_payload(payload)
+    print(f"MQTT message received on topic {topic}: {payload}")
     if parsed.ok:
         if isinstance(parsed.value, dict):
             print(f"MQTT JSON object on {topic}: {parsed.value}")            
