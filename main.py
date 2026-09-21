@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 from aiortc.contrib.media import MediaPlayer
+from lib.DeviceOperation import device_restart
 from lib.resized_video_track import ResizedVideoTrack
 from lib.mqtt_client import MqttClient, MqttConfig
 from lib.serial_controller import SerialController
@@ -676,11 +677,11 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
             v_raw = getValueByKey(parsed.value, 'v', None)
             v = _coerce_int(v_raw)
             print(f"Value of 't': {t}")
-            serial_ctrl.handle_mqtt_command(t, v)
-            # match t:
-            #     case Constant.MQTT_T_VAL_FORWARD:
-            #         print("Received command: move forward")
-            #         af_motor_forward(speed=255)
+            # serial_ctrl.handle_mqtt_command(t, v)
+            match t:
+                case Constant.MQTT_T_VAL_RPI_RESTART:
+                    print("Received command: restart Raspberry Pi")
+                    device_restart()
             #     case Constant.MQTT_T_VAL_BACKWARD:
             #         print("Received command: move backward")
             #         af_motor_backward(speed=255)
@@ -720,8 +721,8 @@ def _on_mqtt_message(topic: str, payload: bytes) -> None:
             #     case Constant.MQTT_T_VAL_RPI_SHUTDOWN:
             #         print("Received command: shutdown Raspberry Pi")
             #         device_shutdown()
-            #     case _:
-            #         print("Received command: unknown")
+                case _:
+                    print("Received command: unknown")
         elif isinstance(parsed.value, list):
             print(f"MQTT JSON array on {topic}: {parsed.value}")
         else:
