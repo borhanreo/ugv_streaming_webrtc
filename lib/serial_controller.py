@@ -24,6 +24,46 @@ from lib import Constant
 from lib.DeviceOperation import device_restart, device_service_restart, device_shutdown
 logger = logging.getLogger(__name__)
 
+from lib.bts7960 import DualBTS7960
+
+
+# ---------------------------------------------------------
+# GPIO configuration
+# BCM numbering is used
+# ---------------------------------------------------------
+
+
+# ---------------------------------------------------------
+# GPIO configuration
+# BCM numbering is used
+# ---------------------------------------------------------
+
+left_motor_pins = {
+    "rpwm": 18,
+    "lpwm": 19,
+    "ren": 23,
+    "len": 24
+}
+
+right_motor_pins = {
+    "rpwm": 12,
+    "lpwm": 13,
+    "ren": 25,
+    "len": 26
+}
+
+
+# Create the dual-motor controller
+robot = DualBTS7960(
+    left_pins=left_motor_pins,
+    right_pins=right_motor_pins,
+    pwm_frequency=1000
+)
+
+def _speed_to_percent(speed: int) -> float:
+    """Convert a 0–255 MQTT speed value to the 0–100 percent used by BTS7960."""
+    return max(0, min(255, int(speed))) * 100 / 255
+
 
 class SerialController:
     """Send motor-control commands to an Arduino Uno over UART."""
@@ -130,38 +170,23 @@ class SerialController:
         match t:
             case Constant.MQTT_T_VAL_FORWARD:
                 logger.info("MQTT → Forward")
-                self.send_motor_command("M1", "F", speed)
-                self.send_motor_command("M2", "F", speed)
-                self.send_motor_command("M3", "F", speed)
-                self.send_motor_command("M4", "F", speed)
+                robot.forward(_speed_to_percent(speed))
 
             case Constant.MQTT_T_VAL_BACKWARD:
                 logger.info("MQTT → Backward")
-                self.send_motor_command("M1", "B", speed)
-                self.send_motor_command("M2", "B", speed)
-                self.send_motor_command("M3", "B", speed)
-                self.send_motor_command("M4", "B", speed)
+                robot.reverse(_speed_to_percent(speed))
 
             case Constant.MQTT_T_VAL_LEFT:
                 logger.info("MQTT → Left")
-                self.send_motor_command("M1", "B", speed)
-                self.send_motor_command("M2", "F", speed)
-                self.send_motor_command("M3", "R", speed)
-                self.send_motor_command("M4", "R", speed)
+                robot.left(_speed_to_percent(speed))
 
             case Constant.MQTT_T_VAL_RIGHT:
                 logger.info("MQTT → Right")
-                self.send_motor_command("M1", "F", speed)
-                self.send_motor_command("M2", "B", speed)
-                self.send_motor_command("M3", "R", speed)
-                self.send_motor_command("M4", "R", speed)
+                robot.right(_speed_to_percent(speed))
 
             case Constant.MQTT_T_VAL_STOP | Constant.MQTT_T_VAL_EMERGENCY_STOP:
                 logger.info("MQTT → Stop")
-                self.send_motor_command("M1", "R", 0)
-                self.send_motor_command("M2", "R", 0)
-                self.send_motor_command("M3", "R", 0)
-                self.send_motor_command("M4", "R", 0)
+                robot.stop()
 
             case Constant.MQTT_T_VAL_SERVO_ROTATE_TEST:
                 logger.info("MQTT → Servo Rotate Test")

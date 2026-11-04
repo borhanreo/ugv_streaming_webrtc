@@ -34,6 +34,9 @@
 
 ### install pyserial
 ```pip install pyserial```
+### install gpiozero
+```pip install gpiozero```
+
 
 
 ### add firebase json
@@ -270,3 +273,7 @@ for transceiver in pc.getTransceivers():
 _log_event("local_video_track_added", device="/dev/video0", width=320, height=240, fps=10)
 
 ```
+
+For issue with video streaming
+click restart button wau=it for room and connection
+Click ext3 button -> disconnect -> connect

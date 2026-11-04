@@ -2,3 +2,4 @@ aiortc
 firebase-admin
 paho-mqtt
 pyserial
+gpiozero
