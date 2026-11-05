@@ -57,7 +57,8 @@ right_motor_pins = {
 robot = DualBTS7960(
     left_pins=left_motor_pins,
     right_pins=right_motor_pins,
-    pwm_frequency=1000
+    pwm_frequency=1000,
+    servo_pin=21,
 )
 
 def _speed_to_percent(speed: int) -> float:
@@ -161,15 +162,17 @@ class SerialController:
     # ------------------------------------------------------------------
 
     def handle_mqtt_command(self, t: int, speed: int = 255) -> None:
-        """Translate an MQTT ``t`` value into a serial motor command.
+        """Translate an MQTT ``t`` value into a robot or device command.
 
         Args:
             t:     Integer command value from the MQTT payload (see Constant).
-            speed: PWM speed to use for movement commands (default 255).
+            speed: PWM speed for movement (default 255), or the servo angle
+                   clamped to 0-180 for the servo-test command.
         """
+        print(f"Handling MQTT command t={t}, speed={speed}")
         match t:
             case Constant.MQTT_T_VAL_FORWARD:
-                logger.info("MQTT → Forward")
+                logger.info("MQTT 1 → Forward")
                 robot.forward(_speed_to_percent(speed))
 
             case Constant.MQTT_T_VAL_BACKWARD:
@@ -188,9 +191,13 @@ class SerialController:
                 logger.info("MQTT → Stop")
                 robot.stop()
 
+            case Constant.MQTT_T_VAL_SERVO2_ROTATE_TEST:
+                logger.info("MQTT → Servo2 Rotate Test")
+                robot.set_servo2_angle(max(0, min(180, int(speed))))
+
             case Constant.MQTT_T_VAL_SERVO_ROTATE_TEST:
                 logger.info("MQTT → Servo Rotate Test")
-                self.send_servo_command("S2", speed) 
+                robot.set_servo_angle(max(0, min(180, int(speed))))
             case Constant.MQTT_T_VAL_RPI_RESTART:
                 logger.info("MQTT → RPi Restart")
                 print("MQTT command received: Restarting device...")

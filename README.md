@@ -37,6 +37,33 @@
 ### install gpiozero
 ```pip install gpiozero```
 
+### GPIO positional servo
+
+`DualBTS7960` in `lib/bts7960.py` supports an optional positional servo.
+The robot in `lib/serial_controller.py` uses BCM GPIO 17 (physical header pin 11)
+for its signal. Connect the servo to a suitable external power supply rated for
+its voltage and current, and connect the supply ground to Pi ground. Do not
+connect the servo to the BTS7960 motor outputs or power it from a Pi GPIO pin.
+
+Control command `t=16` now controls this GPIO servo instead of sending an Arduino
+serial command. Its existing `v` value from WebRTC DataChannel is the servo
+angle in degrees, 0-180, and values outside that range are clamped.
+For example, `{"t": 16, "v": 90}` requests the center position.
+Motor command behavior and the direct UART `send_servo_command` helper are unchanged.
+
+Direct control is available as `robot.set_servo_angle(90)`. Out-of-range direct
+calls raise `ValueError`; calling without a configured servo raises `RuntimeError`.
+Other `DualBTS7960` instances remain motor-only unless `servo_pin` is supplied.
+No servo position is commanded at startup, and `robot.close()` releases its GPIO.
+
+The default pulse range is 0.5-2.5 ms at 50 Hz, independent of motor PWM
+frequency, giving full 180-degree travel on common hobby servos (SG90, MG90S,
+MG996R). If the servo buzzes or strains at either end, narrow the range, for
+example to 0.6-2.4 ms; if it still does not reach 0 or 180 degrees, widen it.
+Supply `servo_min_pulse_width` and `servo_max_pulse_width` in seconds when
+constructing `DualBTS7960`. Confirm the travel limits with the linkage
+disconnected before operating the robot.
+
 
 
 ### add firebase json

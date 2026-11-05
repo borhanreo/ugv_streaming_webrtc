@@ -7,7 +7,7 @@ One BTS7960 module is required for each motor.
 """
 
 from time import sleep
-from gpiozero import PWMOutputDevice, DigitalOutputDevice
+from gpiozero import PWMOutputDevice, DigitalOutputDevice, AngularServo
 
 
 class BTS7960Motor:
@@ -169,7 +169,7 @@ class BTS7960Motor:
 
 class DualBTS7960:
     """
-    Controls a left and right motor.
+    Controls a left and right motor and an optional GPIO positional servo.
 
     Useful for a two-wheel robot or motorized vehicle.
     """
@@ -179,10 +179,15 @@ class DualBTS7960:
         left_pins,
         right_pins,
         pwm_frequency=1000,
-        direction_delay=0.05
+        direction_delay=0.05,
+        servo_pin: int | None = None,
+        servo_min_pulse_width: float = 0.0005,
+        servo_max_pulse_width: float = 0.0025,
     ):
         """
         left_pins and right_pins must be dictionaries.
+        servo_pin is a BCM GPIO signal pin, not a BTS7960 output.
+        Servo pulses use a separate 50 Hz signal, with no startup movement.
 
         Example:
             left_pins = {
@@ -212,6 +217,28 @@ class DualBTS7960:
             pwm_frequency=pwm_frequency,
             direction_delay=direction_delay
         )
+
+        self.servo = (
+            AngularServo(
+                servo_pin,
+                min_angle=0,
+                max_angle=180,
+                initial_angle=None,
+                min_pulse_width=servo_min_pulse_width,
+                max_pulse_width=servo_max_pulse_width,
+                frame_width=0.02,
+            )
+            if servo_pin is not None
+            else None
+        )
+
+    def set_servo_angle(self, angle: float) -> None:
+        """Set the positional servo angle in degrees (0 to 180)."""
+        if self.servo is None:
+            raise RuntimeError("Servo is not configured. Set servo_pin first.")
+        if not 0 <= angle <= 180:
+            raise ValueError("Servo angle must be between 0 and 180")
+        self.servo.angle = angle
 
     def forward(self, speed=100):
         """
@@ -317,3 +344,5 @@ class DualBTS7960:
 
         self.left_motor.close()
         self.right_motor.close()
+        if self.servo is not None:
+            self.servo.close()
